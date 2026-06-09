@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CL21 LEX — Sistema Integral con Google Drive</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+/* ══ TOKENS CL21 ══ */
+:root {
+  --navy:#0D1B3E;--navy2:#1a2d5a;--gold:#C9922A;--gold2:#f0c86a;
+  --blue:#1E5FA5;--teal:#1D9E75;--teal2:#0F6E56;
+  --purple:#7c3aed;--red:#c0392b;--amber:#d97706;--green:#16a34a;
+  --bg:#F2F4F7;--surface:#fff;--surface2:#F8F9FA;--border:#E2E5EA;--border2:#CBD0D8;
+  --text:#1A1D23;--text2:#5A6070;--text3:#8A92A0;
+  --sb:210px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);display:flex;flex-direction:column}
+
+/* ══ CONFIG BANNER ══ */
+#config-banner{background:#7c3aed;color:#fff;padding:8px 20px;font-size:12px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+#config-banner.hidden{display:none}
+#config-banner i{font-size:16px}
+#config-banner a{color:#e9d5ff;text-decoration:underline;cursor:pointer}
+
+/* ══ SHELL ══ */
+.shell{display:flex;flex:1;overflow:hidden;height:calc(100vh - 0px)}
+
+/* ══ SIDEBAR ══ */
+.sidebar{width:var(--sb);flex-shrink:0;background:var(--navy);display:flex;flex-direction:column;overflow-y:auto;border-right:1px solid rgba(255,255,255,.06)}
+.sb-logo{padding:16px 14px 12px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0}
+.sb-logo-mark{font-size:14px;font-weight:600;color:var(--gold2);letter-spacing:.04em}
+.sb-logo-sub{font-size:9px;color:rgba(255,255,255,.3);margin-top:3px;letter-spacing:.06em;line-height:1.4}
+
+/* auth status */
+.auth-status{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.auth-avatar{width:28px;height:28px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0;overflow:hidden}
+.auth-avatar img{width:100%;height:100%;object-fit:cover}
+.auth-name{font-size:11px;color:rgba(255,255,255,.8);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.auth-role{font-size:9px;color:rgba(255,255,255,.35)}
+.btn-signout{background:none;border:none;color:rgba(255,255,255,.35);cursor:pointer;font-size:11px;padding:2px 4px;transition:color .13s;flex-shrink:0}
+.btn-signout:hover{color:rgba(255,255,255,.7)}
+
+.sb-section{padding:10px 0 4px;flex-shrink:0}
+.sb-label{font-size:9px;letter-spacing:.1em;color:rgba(255,255,255,.28);padding:0 14px 6px;text-transform:uppercase;font-weight:500}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 14px;cursor:pointer;color:rgba(255,255,255,.55);border-left:2px solid transparent;font-size:12.5px;transition:all .13s;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.9)}
+.nav-item.active{background:rgba(30,95,165,.3);color:#fff;border-left-color:var(--gold2);font-weight:500}
+.nav-item i{font-size:16px;opacity:.8;width:18px;text-align:center;flex-shrink:0}
+.nav-item.active i{opacity:1}
+.nav-badge{font-size:9px;background:var(--red);color:#fff;padding:1px 6px;border-radius:10px;margin-left:auto;font-weight:600}
+.sb-divider{height:1px;background:rgba(255,255,255,.07);margin:6px 14px}
+.sb-bottom{margin-top:auto;padding:12px 14px 14px;border-top:1px solid rgba(255,255,255,.08);flex-shrink:0}
+.sb-version{font-size:9px;color:rgba(255,255,255,.2)}
+.drive-status{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.drive-dot{width:7px;height:7px;border-radius:50%;background:var(--teal)}
+.drive-dot.disconnected{background:var(--amber)}
+.drive-label{font-size:10px;color:rgba(255,255,255,.4)}
+
+/* ══ MAIN ══ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:48px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-bc{font-size:13px;color:var(--text2)}
+.topbar-bc strong{color:var(--text);font-weight:500}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-badge{font-size:10px;background:rgba(201,146,42,.12);color:var(--gold);padding:3px 10px;border-radius:20px;border:1px solid rgba(201,146,42,.3);font-weight:500}
+
+.content{flex:1;overflow:hidden;position:relative}
+.view{display:none;position:absolute;inset:0;overflow-y:auto}
+.view.active{display:block}
+
+/* ══ LOGIN SCREEN ══ */
+.login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:var(--navy);gap:0}
+.login-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:48px 56px;text-align:center;width:420px;max-width:94vw}
+.login-logo{font-size:48px;font-weight:700;color:var(--gold2);letter-spacing:.03em;margin-bottom:8px}
+.login-sub{font-size:14px;color:rgba(255,255,255,.5);margin-bottom:32px;line-height:1.5}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px 24px;background:#fff;color:#3c4043;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:box-shadow .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.btn-google:hover{box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.btn-google svg{flex-shrink:0}
+.login-note{font-size:11px;color:rgba(255,255,255,.25);margin-top:20px;line-height:1.6}
+.login-config{margin-top:28px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08)}
+.login-config-title{font-size:11px;color:rgba(255,255,255,.3);margin-bottom:10px}
+.config-input{width:100%;padding:8px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:7px;color:#fff;font-size:12px;margin-bottom:8px}
+.config-input::placeholder{color:rgba(255,255,255,.25)}
+.config-input:focus{outline:none;border-color:var(--gold);background:rgba(255,255,255,.09)}
+.btn-save-config{width:100%;padding:9px;background:var(--gold);color:var(--navy);border:none;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:background .13s}
+.btn-save-config:hover{background:var(--gold2)}
+
+/* ══ SHARED ══ */
+.page-hdr{padding:18px 24px 0;background:var(--surface);border-bottom:1px solid var(--border)}
+.page-title{font-size:17px;font-weight:600;color:var(--text)}
+.page-sub{font-size:12px;color:var(--text3);margin-top:2px;padding-bottom:14px}
+.toolbar{padding:10px 24px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.p-search{flex:1;max-width:260px;padding:7px 12px;border:1px solid var(--border2);border-radius:7px;font-size:13px;background:var(--bg);color:var(--text)}
+.p-search:focus{outline:none;border-color:var(--blue);background:var(--surface)}
+.p-sel{padding:7px 10px;border:1px solid var(--border2);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text2)}
+.p-sel:focus{outline:none;border-color:var(--blue)}
+.btn-primary{display:flex;align-items:center;gap:6px;padding:7px 14px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .13s}
+.btn-primary:hover{background:var(--navy2)}
+.btn-sec{display:flex;align-items:center;gap:6px;padding:7px 12px;background:none;border:1px solid var(--border2);border-radius:7px;font-size:12px;color:var(--text2);cursor:pointer;transition:all .13s;white-space:nowrap}
+.btn-sec:hover{border-color:var(--text3);color:var(--text)}
+.scroll{padding:18px 24px;overflow-y:auto;height:calc(100vh - 200px)}
+
+/* ══ TABLES ══ */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.tbl-hdr{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.tbl-hdr-title{font-size:13px;font-weight:500;color:var(--text)}
+.tbl-hdr-count{font-size:11px;color:var(--text3)}
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);padding:9px 14px;background:var(--surface2);text-align:left;border-bottom:1px solid var(--border)}
+td{font-size:12.5px;color:var(--text);padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#F8F9FA55}
+.badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;display:inline-block}
+.b-blue{background:#1E5FA512;color:var(--blue)}
+.b-teal{background:#1D9E7512;color:var(--teal2)}
+.b-amber{background:#fef3c7;color:var(--amber)}
+.b-red{background:#fef2f2;color:var(--red)}
+.b-purple{background:#f5f3ff;color:var(--purple)}
+.b-gray{background:var(--surface2);color:var(--text3);border:1px solid var(--border)}
+.b-gold{background:#fef9ec;color:var(--gold)}
+.b-green{background:#f0fdf4;color:var(--green)}
+.row-actions{display:flex;gap:5px;flex-wrap:wrap}
+.btn-row{padding:4px 8px;border:1px solid var(--border2);border-radius:5px;font-size:11px;background:none;color:var(--text2);cursor:pointer;transition:all .12s;white-space:nowrap;display:flex;align-items:center;gap:3px}
+.btn-row:hover{background:var(--bg);color:var(--text)}
+.btn-row.danger:hover{background:#fef2f2;color:var(--red);border-color:#fca5a5}
+.btn-row.drive{color:var(--blue)}
+.btn-row.drive:hover{background:#EBF5FB;border-color:var(--blue)}
+tr.urg-red td{background:#fff5f5}
+tr.urg-amber td{background:#fffbeb}
+.kpi-strip{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.kpi-s{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 17px;flex:1;min-width:120px}
+.kpi-s-val{font-size:22px;font-weight:700;color:var(--navy)}
+.kpi-s-label{font-size:10px;color:var(--text3);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+
+/* ══ EXPEDIENTE DETALLE ══ */
+.exp-detail-layout{display:grid;grid-template-columns:1fr 360px;gap:0;height:calc(100vh - 48px)}
+.exp-detail-main{overflow-y:auto;padding:20px 24px;border-right:1px solid var(--border)}
+.exp-detail-docs{overflow-y:auto;background:var(--surface);display:flex;flex-direction:column}
+.docs-hdr{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.docs-hdr-title{font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:7px}
+.docs-list{flex:1;overflow-y:auto;padding:12px}
+.doc-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;transition:border-color .13s;background:var(--surface)}
+.doc-item:hover{border-color:var(--border2)}
+.doc-icon{width:36px;height:36px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.doc-icon.pdf{background:#fef2f2;color:var(--red)}
+.doc-icon.doc{background:#EBF5FB;color:var(--blue)}
+.doc-icon.img{background:#f0fdf4;color:var(--green)}
+.doc-icon.other{background:var(--surface2);color:var(--text3)}
+.doc-info{flex:1;min-width:0}
+.doc-name{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-meta{font-size:10px;color:var(--text3);margin-top:2px}
+.doc-cat{font-size:10px;padding:1px 7px;border-radius:10px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);margin-top:4px;display:inline-block}
+.doc-actions{display:flex;gap:4px;flex-shrink:0}
+.doc-btn{width:28px;height:28px;border:1px solid var(--border2);border-radius:6px;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text3);transition:all .12s;font-size:14px}
+.doc-btn:hover{background:var(--bg);color:var(--text)}
+.doc-btn.danger:hover{background:#fef2f2;color:var(--red)}
+
+.upload-zone{border:2px dashed var(--border2);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:all .15s;margin:12px;flex-shrink:0}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--blue);background:#1E5FA508}
+.upload-zone i{font-size:28px;color:var(--text3);display:block;margin-bottom:8px}
+.upload-zone p{font-size:12px;color:var(--text2)}
+.upload-zone small{font-size:10px;color:var(--text3)}
+.upload-progress{background:var(--surface2);border-radius:6px;overflow:hidden;height:4px;margin-top:8px;display:none}
+.upload-progress-bar{height:100%;background:var(--teal);transition:width .3s}
+
+/* ══ FICHA EXPEDIENTE ══ */
+.ficha{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
+.ficha-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.ficha-title i{color:var(--blue)}
+.ficha-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ficha-field{display:flex;flex-direction:column;gap:3px}
+.ficha-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+.ficha-value{font-size:13px;color:var(--text)}
+.ficha-full{grid-column:1/-1}
+
+/* ══ TIMELINE ══ */
+.timeline{padding:0 0 8px}
+.tl-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.tl-item:last-child{border-bottom:none}
+.tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.tl-content{flex:1}
+.tl-title{font-size:12px;font-weight:500;color:var(--text)}
+.tl-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.tl-input{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:7px;font-size:12px;background:var(--bg);color:var(--text);font-family:inherit;resize:vertical;min-height:52px}
+.tl-input:focus{outline:none;border-color:var(--blue)}
+.btn-add-nota{padding:6px 12px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer;margin-top:6px}
+
+/* ══ MODAL ══ */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:500}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:12px;padding:24px;width:560px;max-width:96vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:3px}
+.modal-sub{font-size:12px;color:var(--text3);margin-bottom:18px;line-height:1.5}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-full{grid-column:1/-1}
+.f-group{display:flex;flex-direction:column;gap:5px}
+.f-label{font-size:12px;color:var(--text2);font-weight:500}
+.f-input,.f-select,.f-textarea{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:7px;font-size:13px;background:var(--bg);color:var(--text);font-family:inherit}
+.f-input:focus,.f-select:focus,.f-textarea:focus{outline:none;border-color:var(--blue);background:var(--surface)}
+.f-textarea{resize:vertical;min-height:72px;line-height:1.5}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.btn-cancel{padding:8px 16px;border:1px solid var(--border2);border-radius:8px;background:none;color:var(--text2);font-size:13px;cursor:pointer}
+.btn-ok{padding:8px 18px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer}
+
+/* ══ DASHBOARD ══ */
+.dashboard{padding:20px 24px}
+.dash-greeting h1{font-size:19px;font-weight:600;color:var(--text)}
+.dash-greeting p{font-size:13px;color:var(--text2);margin-top:3px;margin-bottom:18px}
+.alert-strip{background:#fff5f5;border:1px solid #fca5a5;border-radius:10px;padding:12px 16px;margin-bottom:18px;display:flex;align-items:flex-start;gap:10px}
+.alert-strip i{color:var(--red);font-size:18px;flex-shrink:0;margin-top:1px}
+.alert-strip strong{font-size:13px;color:var(--red)}
+.alert-strip p{font-size:12px;color:#7f1d1d;margin-top:2px;line-height:1.5}
+.dash-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:15px 18px}
+.kpi-val{font-size:26px;font-weight:700;color:var(--navy)}
+.kpi-label{font-size:10px;color:var(--text3);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}
+.kpi-sub{font-size:11px;margin-top:3px;color:var(--text3)}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.dash-card-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.dash-card-title{font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:7px}
+.dash-card-title i{color:var(--blue)}
+.dash-card-link{font-size:11px;color:var(--blue);cursor:pointer}
+.dash-item{display:flex;align-items:flex-start;gap:10px;padding:8px 16px;border-bottom:1px solid var(--border)}
+.dash-item:last-child{border-bottom:none}
+.dash-item-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.dash-item-title{font-size:12px;font-weight:500;color:var(--text)}
+.dash-item-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* ══ SYNC INDICATOR ══ */
+.sync-indicator{position:fixed;bottom:16px;right:16px;background:var(--navy);color:#fff;padding:8px 14px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px;z-index:400;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.sync-indicator.show{opacity:1;transform:translateY(0)}
+.sync-indicator i{font-size:14px}
+.sync-indicator.syncing i{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:600;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ══ EMPTY ══ */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;gap:12px;color:var(--text3);text-align:center}
+.empty i{font-size:40px;opacity:.2}
+.empty p{font-size:13px;max-width:260px;line-height:1.6}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- CONFIG BANNER -->
+<div id="config-banner" style="display:none">
+  <i class="ti ti-settings"></i>
+  <span>CL21 LEX requiere configuración inicial: ingrese su Client ID y API Key de Google Cloud para activar Drive. <a onclick="scrollToConfig()">Configurar ahora →</a></span>
+  <button onclick="document.getElementById('config-banner').classList.add('hidden')" style="margin-left:auto;background:none;border:none;color:#e9d5ff;cursor:pointer;font-size:16px">✕</button>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="login-screen" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">CL21 LEX</div>
+    <div class="login-sub">Sistema Integral de Gestión Jurídica<br>Círculo Legal 21 · Oaxaca, México</div>
+    <button class="btn-google" onclick="handleSignIn()">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Iniciar sesión con Google
+    </button>
+    <p class="login-note">Solo cuentas autorizadas por el Dr. J. Abel Ramírez Ruiz tienen acceso al sistema. Sus credenciales de Google se verifican automáticamente.</p>
+    <div class="login-config" style="display:none">
+      <div class="login-config-title">CONFIGURACIÓN INICIAL (solo Dr. Abel)</div>
+      <input class="config-input" id="cfg-client-id" placeholder="Client ID · XXXXXXXXX.apps.googleusercontent.com" value="">
+      <input class="config-input" id="cfg-api-key" placeholder="API Key · AIzaSy...">
+      <input class="config-input" id="cfg-folder-id" placeholder="ID de carpeta raíz en Google Drive (opcional)">
+      <button class="btn-save-config" onclick="saveConfig()">Guardar configuración</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="shell" style="display:none">
+  <nav class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">CL21 LEX</div>
+      <div class="sb-logo-sub">Círculo Legal 21<br>Legal Compliance · Oaxaca</div>
+    </div>
+    <div class="auth-status">
+      <div class="auth-avatar" id="sb-avatar">?</div>
+      <div style="flex:1;min-width:0">
+        <div class="auth-name" id="sb-name">—</div>
+        <div class="auth-role">Usuario CL21</div>
+      </div>
+      <button class="btn-signout" onclick="handleSignOut()" title="Cerrar sesión"><i class="ti ti-logout" style="font-size:14px"></i></button>
+    </div>
+
+    <div class="sb-section">
+      <div class="sb-label">Principal</div>
+      <div class="nav-item active" onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-label">Litigio</div>
+      <div class="nav-item" onclick="nav('expedientes',this)"><i class="ti ti-briefcase"></i>Expedientes<span class="nav-badge" id="nb-exp">0</span></div>
+      <div class="nav-item" onclick="nav('agenda',this)"><i class="ti ti-calendar-event"></i>Agenda<span class="nav-badge" id="nb-ag" style="display:none">0</span></div>
+      <div class="nav-item" onclick="nav('clientes',this)"><i class="ti ti-users"></i>Clientes</div>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section">
+      <div class="sb-label">Referencia</div>
+      <div class="nav-item" onclick="nav('biblioteca',this)"><i class="ti ti-books"></i>Biblioteca legislativa</div>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section">
+      <div class="sb-label">Reportes</div>
+      <div class="nav-item" onclick="nav('reportes',this)"><i class="ti ti-chart-bar"></i>Reportes</div>
+    </div>
+    <div class="sb-bottom">
+      <div class="drive-status">
+        <div class="drive-dot" id="drive-dot"></div>
+        <span class="drive-label" id="drive-label">Google Drive conectado</span>
+      </div>
+      <div class="sb-version">CL21 LEX v2.0 · Drive Edition · 2026</div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-bc" id="topbar-bc"><strong>Dashboard</strong></div>
+      <div class="topbar-right">
+        <span class="topbar-badge" id="topbar-user-badge">CL21 · Círculo Legal 21</span>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="view active" id="view-dashboard">
+        <div class="dashboard">
+          <div id="dash-alert"></div>
+          <div class="dash-greeting">
+            <h1 id="dash-greeting-text">Buenos días</h1>
+            <p id="dash-date-text"></p>
+          </div>
+          <div class="dash-kpis">
+            <div class="kpi-card"><div class="kpi-val" id="kpi-exp">—</div><div class="kpi-label">Asuntos activos</div></div>
+            <div class="kpi-card"><div class="kpi-val" id="kpi-urg" style="color:var(--red)">—</div><div class="kpi-label">Vencimientos urgentes</div><div class="kpi-sub">≤ 7 días</div></div>
+            <div class="kpi-card"><div class="kpi-val" id="kpi-cli" style="color:var(--teal)">—</div><div class="kpi-label">Clientes activos</div></div>
+            <div class="kpi-card"><div class="kpi-val" id="kpi-docs" style="color:var(--blue)">—</div><div class="kpi-label">Documentos en Drive</div></div>
+          </div>
+          <div class="dash-grid">
+            <div class="dash-card">
+              <div class="dash-card-hdr"><span class="dash-card-title"><i class="ti ti-briefcase"></i>Expedientes críticos</span><span class="dash-card-link" onclick="nav('expedientes',null)">Ver todos →</span></div>
+              <div id="dash-exp-list"></div>
+            </div>
+            <div class="dash-card">
+              <div class="dash-card-hdr"><span class="dash-card-title"><i class="ti ti-calendar-event"></i>Próximos vencimientos</span><span class="dash-card-link" onclick="nav('agenda',null)">Ver agenda →</span></div>
+              <div id="dash-evt-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPEDIENTES LIST -->
+      <div class="view" id="view-expedientes">
+        <div class="page-hdr"><div class="page-title">Expedientes</div><div class="page-sub">Haga clic en un expediente para ver su ficha completa y gestionar documentos</div></div>
+        <div class="toolbar">
+          <input type="text" class="p-search" id="s-exp" placeholder="Buscar expediente…" oninput="renderExp()">
+          <select class="p-sel" id="f-etapa" onchange="renderExp()">
+            <option value="">Todas las etapas</option>
+            <option>Etapa inicial / admisión</option><option>Audiencia preliminar</option>
+            <option>Audiencia de juicio</option><option>Sentencia</option>
+            <option>Ejecución / cumplimiento</option><option>Amparo</option><option>Asesoría / preventivo</option>
+          </select>
+          <select class="p-sel" id="f-mat" onchange="renderExp()">
+            <option value="">Toda materia</option>
+            <option>Mercantil</option><option>Corporativo</option><option>Fiscal</option><option>Amparo</option><option>Civil</option><option>Penal</option><option>Agrario</option><option>Familiar</option><option>Laboral</option><option>Administrativo</option><option>Constitucional</option>
+          </select>
+          <button class="btn-primary" onclick="openModal('asunto')"><i class="ti ti-plus" style="font-size:13px"></i>Nuevo expediente</button>
+        </div>
+        <div class="scroll" id="exp-body"></div>
+      </div>
+
+      <!-- EXPEDIENTE DETALLE -->
+      <div class="view" id="view-exp-detalle">
+        <div class="exp-detail-layout">
+          <div class="exp-detail-main" id="exp-detail-main"></div>
+          <div class="exp-detail-docs">
+            <div class="docs-hdr">
+              <span class="docs-hdr-title"><i class="ti ti-folder-open" style="color:var(--gold)"></i>Documentos en Drive</span>
+              <button class="btn-sec" onclick="openDrivePicker()" style="font-size:11px;padding:5px 10px">
+                <i class="ti ti-link" style="font-size:12px"></i>Vincular de Drive
+              </button>
+            </div>
+            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()"
+              ondragover="event.preventDefault();this.classList.add('dragover')"
+              ondragleave="this.classList.remove('dragover')"
+              ondrop="handleDrop(event)">
+              <i class="ti ti-cloud-upload"></i>
+              <p>Arrastre archivos aquí o haga clic para seleccionar</p>
+              <small>PDF, DOCX, XLSX, JPG, PNG · Máx. 10 MB por archivo</small>
+              <div class="upload-progress" id="upload-progress"><div class="upload-progress-bar" id="upload-bar"></div></div>
+            </div>
+            <input type="file" id="file-input" multiple accept=".pdf,.doc,.docx,.xlsx,.xls,.jpg,.jpeg,.png" style="display:none" onchange="handleFileSelect(this)">
+            <div class="docs-list" id="docs-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AGENDA -->
+      <div class="view" id="view-agenda">
+        <div class="page-hdr"><div class="page-title">Agenda y Vencimientos</div><div class="page-sub">Términos procesales, audiencias y compromisos</div></div>
+        <div class="toolbar">
+          <select class="p-sel" id="f-periodo" onchange="renderAgenda()"><option value="7">7 días</option><option value="15">15 días</option><option value="30" selected>30 días</option><option value="90">90 días</option><option value="0">Todos</option></select>
+          <select class="p-sel" id="f-tipo-e" onchange="renderAgenda()"><option value="">Todos los tipos</option><option>Audiencia</option><option>Término procesal</option><option>Vencimiento legal</option><option>Reunión cliente</option><option>Entrega de escrito</option></select>
+          <button class="btn-primary" onclick="openModal('evento')"><i class="ti ti-plus" style="font-size:13px"></i>Nuevo evento</button>
+        </div>
+        <div class="scroll" id="agenda-body"></div>
+      </div>
+
+      <!-- CLIENTES -->
+      <div class="view" id="view-clientes">
+        <div class="page-hdr"><div class="page-title">Clientes</div><div class="page-sub">Directorio y actividad por cliente</div></div>
+        <div class="toolbar">
+          <input type="text" class="p-search" id="s-cli" placeholder="Buscar cliente…" oninput="renderClientes()">
+          <select class="p-sel" id="f-sta-c" onchange="renderClientes()"><option value="">Todos</option><option>Activo</option><option>En espera</option><option>Cerrado</option></select>
+          <button class="btn-primary" onclick="openModal('cliente')"><i class="ti ti-plus" style="font-size:13px"></i>Nuevo cliente</button>
+        </div>
+        <div class="scroll" id="cli-body"></div>
+      </div>
+
+      <!-- BIBLIOTECA -->
+      <div class="view" id="view-biblioteca" style="overflow:hidden">
+        <div style="display:grid;grid-template-columns:240px 1fr;height:calc(100vh - 48px)">
+          <!-- SIDEBAR ORDENAMIENTOS -->
+          <nav style="background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column">
+            <div style="padding:13px 14px 8px;border-bottom:1px solid var(--border);flex-shrink:0">
+              <div style="font-size:12px;font-weight:600;color:var(--text)">Biblioteca Legislativa</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:2px" id="bib-stats">Cargando ordenamientos…</div>
+            </div>
+            <!-- UPLOAD ZONE -->
+            <div style="padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0">
+              <div id="bib-upload-zone" style="border:1.5px dashed var(--border2);border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:all .14s"
+                onclick="document.getElementById('bib-file-input').click()"
+                ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='#1E5FA508'"
+                ondragleave="this.style.borderColor='';this.style.background=''"
+                ondrop="bibHandleDrop(event)">
+                <i class="ti ti-file-type-pdf" style="font-size:22px;color:var(--text3);display:block;margin-bottom:4px"></i>
+                <div style="font-size:11px;color:var(--text2);font-weight:500">Subir PDF de ley</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">DOF · diputados.gob.mx</div>
+              </div>
+              <input type="file" id="bib-file-input" accept=".pdf" multiple style="display:none" onchange="bibHandleFiles(this)">
+              <div id="bib-upload-progress" style="display:none;margin-top:8px">
+                <div style="font-size:11px;color:var(--text2);margin-bottom:4px" id="bib-progress-text">Procesando…</div>
+                <div style="background:var(--border);border-radius:4px;height:4px"><div id="bib-progress-bar" style="height:100%;background:var(--teal);border-radius:4px;transition:width .3s;width:0%"></div></div>
+              </div>
+            </div>
+            <!-- LEY LIST -->
+            <div style="flex:1;overflow-y:auto;padding:8px 0" id="bib-ley-list">
+              <div style="padding:20px 14px;text-align:center;color:var(--text3);font-size:12px">
+                <i class="ti ti-books" style="font-size:28px;opacity:.3;display:block;margin-bottom:8px"></i>
+                Suba los PDFs de las leyes para comenzar
+              </div>
+            </div>
+            <!-- LOAD FROM DRIVE -->
+            <div style="padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0">
+              <button onclick="bibLoadFromDrive()" style="width:100%;padding:8px;background:none;border:1px solid var(--border2);border-radius:7px;font-size:11px;color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .13s" onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'" onmouseout="this.style.borderColor='';this.style.color=''">
+                <i class="ti ti-cloud-download" style="font-size:13px"></i>Cargar desde Drive
+              </button>
+            </div>
+          </nav>
+
+          <!-- SEARCH + RESULTS -->
+          <div style="display:flex;flex-direction:column;overflow:hidden">
+            <!-- SEARCH BAR -->
+            <div style="padding:12px 18px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0">
+              <div style="display:flex;gap:8px;margin-bottom:10px">
+                <div style="flex:1;position:relative">
+                  <i class="ti ti-search" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;pointer-events:none"></i>
+                  <input type="text" id="bib-q" style="width:100%;padding:8px 12px 8px 35px;border:1px solid var(--border2);border-radius:8px;font-size:13px;background:var(--bg);color:var(--text)" 
+                    placeholder="Buscar en todos los ordenamientos: solidaridad fiscal / Art. 170 / responsabilidad administrador…"
+                    onkeydown="if(event.key==='Enter')bibSearch()">
+                </div>
+                <button class="btn-primary" onclick="bibSearch()">Buscar</button>
+                <button class="btn-sec" onclick="bibClearSearch()" title="Limpiar"><i class="ti ti-x" style="font-size:13px"></i></button>
+              </div>
+              <!-- SCOPE CHIPS -->
+              <div style="display:flex;gap:5px;flex-wrap:wrap" id="bib-scope-chips">
+                <span class="scope-chip active" onclick="bibSetScope('all',this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--navy);color:#fff;cursor:pointer">Todos</span>
+              </div>
+            </div>
+
+            <!-- RESULTS -->
+            <div style="flex:1;overflow-y:auto;padding:16px 18px" id="bib-results">
+              <div class="empty"><i class="ti ti-books"></i><p>Suba los PDFs de los ordenamientos y realice su consulta.<br><span style="font-size:11px">Los artículos se indexan automáticamente al subir cada ley.</span></p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<!-- REPORTES -->
+      <div class="view" id="view-reportes">
+        <div class="page-hdr"><div class="page-title">Reportes</div><div class="page-sub">Vista ejecutiva consolidada del despacho</div></div>
+        <div class="scroll" id="rep-body"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal-inner"></div>
+</div>
+
+<div class="sync-indicator" id="sync-indicator">
+  <i class="ti ti-refresh" id="sync-icon"></i>
+  <span id="sync-text">Sincronizando con Drive…</span>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- GOOGLE APIs -->
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+
+<script>
+// ══════════════════════════════════════
+// CONFIGURACIÓN — REEMPLAZAR CON SUS CREDENCIALES
+// ══════════════════════════════════════
+let CFG = {
+  clientId: '985852434610-g85091aa2mje51057el0itloljmk9qe4.apps.googleusercontent.com',
+  apiKey: 'AIzaSyAbnnLQ01EakIhxuM8Qm5fsaLPnp6kJtkk',
+  folderId: localStorage.getItem('cl21_folder_id') || '',
+  scopes: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly'
+};
+
+async function callGemini(systemPrompt, userPrompt, maxTokens) {
+  const GKEY = 'AQ.Ab8RN6LkRuXlsjMoS5UW0iVaJl24MEYlXL5QeDbGqj1KhWWGzg';
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GKEY;
+  const body = {
+    contents: [{ parts: [{ text: systemPrompt + '\n\n' + userPrompt }] }],
+    generationConfig: { maxOutputTokens: maxTokens || 1200, temperature: 0.3 }
+  };
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await resp.json();
+  if(data.error) throw new Error(data.error.message);
+  return data.candidates[0].content.parts[0].text;
+}
+
+const DATA_FILE = 'CL21_LEX_datos.json';
+const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+
+let gapiInited = false, gisInited = false, tokenClient = null;
+let currentUser = null, accessToken = null;
+let CL21 = { asuntos:[], eventos:[], clientes:[], documentos:{} };
+let currentExpId = null;
+
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function fmtISO(d){return d.toISOString().split('T')[0];}
+function fmtDate(d){return new Date(d).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'});}
+function diffDays(d){return Math.ceil((new Date(d)-TODAY)/86400000);}
+function fv(id){return (document.getElementById(id)||{}).value||'';}
+
+function scrollToConfig(){document.getElementById('cfg-client-id').scrollIntoView({behavior:'smooth'});document.getElementById('cfg-client-id').focus();}
+
+function saveConfig(){
+  const cid=fv('cfg-client-id').trim();
+  const ak=fv('cfg-api-key').trim();
+  const fid=fv('cfg-folder-id').trim();
+  if(!cid||!ak){alert('Ingrese el Client ID y la API Key');return;}
+  localStorage.setItem('cl21_client_id',cid);
+  localStorage.setItem('cl21_api_key',ak);
+  if(fid)localStorage.setItem('cl21_folder_id',fid);
+  CFG.clientId=cid; CFG.apiKey=ak; CFG.folderId=fid;
+  document.getElementById('config-banner').classList.add('hidden');
+  showToast('Configuración guardada. Iniciando sesión…');
+  setTimeout(()=>initGoogleAPIs(),800);
+}
+
+// ══════════════════════════════════════
+// GOOGLE AUTH & API INIT
+// ══════════════════════════════════════
+function initGoogleAPIs(){
+  if(!CFG.clientId||!CFG.apiKey){
+    showLoginScreen();
+    return;
+  }
+  gapi.load('client:picker', async ()=>{
+    await gapi.client.init({ apiKey: CFG.apiKey, discoveryDocs:[DISCOVERY_DOC] });
+    gapiInited = true;
+    maybeEnableLogin();
+  });
+
+  google.accounts.id.initialize({
+    client_id: CFG.clientId,
+    callback: handleCredentialResponse,
+    auto_select: false
+  });
+
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CFG.clientId,
+    scope: CFG.scopes,
+    callback: async (resp) => {
+      if(resp.error){showToast('Error de autenticación: '+resp.error);return;}
+      accessToken = resp.access_token;
+      await loadFromDrive();
+      showApp();
+    }
+  });
+  gisInited = true;
+  maybeEnableLogin();
+}
+
+function maybeEnableLogin(){
+  if(gapiInited&&gisInited) showLoginScreen();
+}
+
+function showLoginScreen(){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  if(CFG.clientId){
+    document.getElementById('cfg-client-id').value=CFG.clientId;
+    document.getElementById('cfg-api-key').value=CFG.apiKey;
+    document.getElementById('cfg-folder-id').value=CFG.folderId;
+  }
+  if(!CFG.clientId){
+    document.getElementById('config-banner').classList.remove('hidden');
+  }
+}
+
+function handleCredentialResponse(response){
+  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  currentUser = payload;
+}
+
+function handleSignIn(){
+  if(!CFG.clientId){alert('Configure primero el Client ID y API Key en el panel inferior.');scrollToConfig();return;}
+  tokenClient.requestAccessToken({prompt:'consent'});
+}
+
+function handleSignOut(){
+  if(confirm('¿Cerrar sesión?')){
+    accessToken=null; currentUser=null;
+    google.accounts.oauth2.revoke(accessToken||'',()=>{});
+    showLoginScreen();
+  }
+}
+
+function showApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  if(currentUser){
+    document.getElementById('sb-name').textContent = currentUser.name||currentUser.email;
+    document.getElementById('topbar-user-badge').textContent = (currentUser.name||currentUser.email)+' · CL21';
+    if(currentUser.picture){
+      document.getElementById('sb-avatar').innerHTML='<img src="'+currentUser.picture+'">';
+    } else {
+      document.getElementById('sb-avatar').textContent=(currentUser.name||'U')[0].toUpperCase();
+    }
+  }
+  // greeting
+  const h=new Date().getHours();
+  document.getElementById('dash-greeting-text').textContent=(h<12?'Buenos días':h<18?'Buenas tardes':'Buenas noches')+', Dr. Ramírez';
+  document.getElementById('dash-date-text').textContent='Resumen operativo · '+TODAY.toLocaleDateString('es-MX',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  updateBadges(); renderAll(); renderDashboard();
+  setInterval(syncToDrive, 60000);
+  bibAutoLoad();
+}
+
+// ══════════════════════════════════════
+// GOOGLE DRIVE — DATOS JSON
+// ══════════════════════════════════════
+let driveDataFileId = null;
+
+async function loadFromDrive(){
+  showSync('Cargando datos desde Drive…');
+  try {
+    const list = await gapi.client.drive.files.list({
+      q: `name='${DATA_FILE}' and trashed=false`,
+      fields: 'files(id,name,modifiedTime)',
+      spaces: 'drive'
+    });
+    const files = list.result.files;
+    if(files&&files.length>0){
+      driveDataFileId = files[0].id;
+      const content = await gapi.client.drive.files.get({ fileId: driveDataFileId, alt:'media' });
+      CL21 = JSON.parse(content.body);
+      if(!CL21.documentos) CL21.documentos={};
+      showSync('Datos cargados', false, true);
+      document.getElementById('drive-dot').classList.remove('disconnected');
+      document.getElementById('drive-label').textContent='Google Drive sincronizado';
+    } else {
+      seedData();
+      await createDataFile();
+      showSync('Datos iniciales creados en Drive', false, true);
+    }
+  } catch(e){
+    console.error('Drive error:',e);
+    seedData();
+    document.getElementById('drive-dot').classList.add('disconnected');
+    document.getElementById('drive-label').textContent='Drive sin conexión (datos locales)';
+    showSync('Sin conexión a Drive', false, true);
+  }
+}
+
+async function createDataFile(){
+  const meta = { name: DATA_FILE, mimeType:'application/json', parents: CFG.folderId?[CFG.folderId]:[] };
+  const body = JSON.stringify(CL21, null, 2);
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(meta)], {type:'application/json'}));
+  form.append('file', new Blob([body], {type:'application/json'}));
+  const resp = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+    method:'POST', headers:{'Authorization':'Bearer '+accessToken}, body:form
+  });
+  const data = await resp.json();
+  driveDataFileId = data.id;
+}
+
+async function syncToDrive(){
+  if(!accessToken||!driveDataFileId) return;
+  showSync('Sincronizando…');
+  try {
+    const body = JSON.stringify(CL21, null, 2);
+    await fetch('https://www.googleapis.com/upload/drive/v3/files/'+driveDataFileId+'?uploadType=media', {
+      method:'PATCH', headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'}, body
+    });
+    showSync('Guardado en Drive', false, true);
+  } catch(e){ showSync('Error al sincronizar', false, true); }
+}
+
+async function forceSave(){
+  if(!accessToken){ CL21_local_save(); return; }
+  if(!driveDataFileId){ await createDataFile(); return; }
+  await syncToDrive();
+}
+
+function CL21_local_save(){ localStorage.setItem('cl21lex_v1_backup', JSON.stringify(CL21)); }
+
+// ══════════════════════════════════════
+// FILE UPLOAD TO DRIVE
+// ══════════════════════════════════════
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('dragover');
+  const files=[...e.dataTransfer.files];
+  files.forEach(f=>uploadFile(f));
+}
+
+function handleFileSelect(input){
+  [...input.files].forEach(f=>uploadFile(f));
+  input.value='';
+}
+
+async function uploadFile(file){
+  if(!currentExpId){showToast('Seleccione un expediente primero');return;}
+  if(file.size>10*1024*1024){showToast('Archivo demasiado grande (máx. 10 MB): '+file.name);return;}
+  if(!accessToken){showToast('Inicie sesión para subir archivos a Drive');return;}
+
+  showSync('Subiendo '+file.name+'…');
+  const bar=document.getElementById('upload-bar');
+  const prog=document.getElementById('upload-progress');
+  prog.style.display='block'; bar.style.width='0%';
+
+  try {
+    const expFolder = await getOrCreateExpFolder(currentExpId);
+    const meta = { name:file.name, parents:[expFolder] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'}));
+    form.append('file', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST','https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType,webViewLink,createdTime');
+    xhr.setRequestHeader('Authorization','Bearer '+accessToken);
+
+    xhr.upload.onprogress = e => { if(e.lengthComputable) bar.style.width=(e.loaded/e.total*100)+'%'; };
+
+    xhr.onload = async () => {
+      prog.style.display='none';
+      if(xhr.status===200){
+        const f=JSON.parse(xhr.responseText);
+        if(!CL21.documentos[currentExpId]) CL21.documentos[currentExpId]=[];
+        CL21.documentos[currentExpId].push({
+          id:f.id, name:f.name, mimeType:f.mimeType,
+          url:f.webViewLink, date:new Date().toISOString().split('T')[0],
+          cat:inferCat(f.name), uploader: currentUser?currentUser.name:'Usuario'
+        });
+        await forceSave();
+        renderDocs(currentExpId);
+        updateKpiDocs();
+        showSync('Archivo subido a Drive', false, true);
+        showToast(file.name+' subido correctamente');
+      } else { showToast('Error al subir '+file.name); }
+    };
+    xhr.send(form);
+  } catch(e){ prog.style.display='none'; showToast('Error de conexión con Drive'); }
+}
+
+async function getOrCreateExpFolder(expId){
+  const exp=CL21.asuntos.find(a=>a.id===expId);
+  const folderName='EXP_'+(exp?exp.exp.replace('/','_'):expId);
+  if(exp&&exp.driveFolderId) return exp.driveFolderId;
+
+  const parent=CFG.folderId||'root';
+  const list=await gapi.client.drive.files.list({
+    q:`name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    fields:'files(id)'
+  });
+  if(list.result.files&&list.result.files.length>0){
+    const fid=list.result.files[0].id;
+    if(exp) exp.driveFolderId=fid;
+    return fid;
+  }
+  const r=await gapi.client.drive.files.create({
+    resource:{name:folderName,mimeType:'application/vnd.google-apps.folder',parents:[parent]},
+    fields:'id'
+  });
+  if(exp) exp.driveFolderId=r.result.id;
+  return r.result.id;
+}
+
+function openDrivePicker(){
+  if(!accessToken){showToast('Inicie sesión para usar Google Picker');return;}
+  if(!CFG.apiKey){showToast('Configure la API Key primero');return;}
+  const view=new google.picker.View(google.picker.ViewId.DOCS);
+  const picker=new google.picker.PickerBuilder()
+    .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+    .setOAuthToken(accessToken)
+    .setDeveloperKey(CFG.apiKey)
+    .addView(view)
+    .setCallback(pickerCallback)
+    .build();
+  picker.setVisible(true);
+}
+
+async function pickerCallback(data){
+  if(data.action===google.picker.Action.PICKED){
+    for(const doc of data.docs){
+      if(!CL21.documentos[currentExpId]) CL21.documentos[currentExpId]=[];
+      const exists=CL21.documentos[currentExpId].find(d=>d.id===doc.id);
+      if(!exists){
+        CL21.documentos[currentExpId].push({
+          id:doc.id, name:doc.name, mimeType:doc.mimeType||'',
+          url:doc.url||'https://drive.google.com/file/d/'+doc.id+'/view',
+          date:new Date().toISOString().split('T')[0],
+          cat:inferCat(doc.name), uploader: currentUser?currentUser.name:'Usuario'
+        });
+      }
+    }
+    await forceSave();
+    renderDocs(currentExpId);
+    updateKpiDocs();
+    showToast('Documento(s) vinculado(s) desde Drive');
+  }
+}
+
+function inferCat(name){
+  const n=name.toLowerCase();
+  if(n.includes('sentencia')||n.includes('resoluci')) return 'Sentencia';
+  if(n.includes('escrito')||n.includes('demanda')||n.includes('contestaci')) return 'Escrito procesal';
+  if(n.includes('amparo')) return 'Amparo';
+  if(n.includes('cfdi')||n.includes('factura')||n.includes('fiscal')) return 'Documento fiscal';
+  if(n.includes('contrato')||n.includes('convenio')) return 'Contrato / Convenio';
+  if(n.includes('dictamen')||n.includes('opinion')||n.includes('loi')) return 'Dictamen';
+  if(n.includes('auto')||n.includes('notificaci')) return 'Auto judicial';
+  if(n.includes('poder')||n.includes('acta')) return 'Documento corporativo';
+  return 'Otro';
+}
+
+async function deleteDoc(expId, docId){
+  if(!confirm('¿Eliminar el vínculo de este documento del expediente?'))return;
+  CL21.documentos[expId]=(CL21.documentos[expId]||[]).filter(d=>d.id!==docId);
+  await forceSave(); renderDocs(expId); updateKpiDocs();
+  showToast('Documento desvinculado del expediente');
+}
+
+function renderDocs(expId){
+  const docs=(CL21.documentos[expId]||[]);
+  const el=document.getElementById('docs-list');
+  if(!docs.length){
+    el.innerHTML='<div class="empty" style="padding:30px 10px"><i class="ti ti-folder-open"></i><p>Sin documentos aún. Suba archivos o vincule desde Drive.</p></div>';
+    return;
+  }
+  const iconMap={'application/pdf':'ti ti-file-type-pdf doc-icon pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'ti ti-file-type-doc doc-icon doc','image/jpeg':'ti ti-photo doc-icon img','image/png':'ti ti-photo doc-icon img'};
+  el.innerHTML=docs.map(d=>{
+    const iconCls=iconMap[d.mimeType]||'ti ti-file doc-icon other';
+    return `<div class="doc-item">
+      <div class="${iconCls.split(' ').slice(-2).join(' ')}"><i class="${iconCls.split(' ').slice(0,-2).join(' ')}"></i></div>
+      <div class="doc-info">
+        <div class="doc-name">${d.name}</div>
+        <div class="doc-meta">${fmtDate(d.date)} · ${d.uploader||'Usuario'}</div>
+        <span class="doc-cat">${d.cat||'Documento'}</span>
+      </div>
+      <div class="doc-actions">
+        <button class="doc-btn" onclick="window.open('${d.url}','_blank')" title="Abrir en Drive"><i class="ti ti-external-link"></i></button>
+        <button class="doc-btn danger" onclick="deleteDoc('${expId}','${d.id}')" title="Desvincular"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateKpiDocs(){
+  const total=Object.values(CL21.documentos||{}).reduce((s,arr)=>s+(arr||[]).length,0);
+  document.getElementById('kpi-docs').textContent=total;
+}
+
+// ══════════════════════════════════════
+// SEED DATA
+// ══════════════════════════════════════
+function seedData(){
+  if(CL21.asuntos&&CL21.asuntos.length) return;
+  CL21.asuntos=[
+    {id:1,exp:'654/2021',tipo:'Juicio Oral Mercantil',materia:'Mercantil',etapa:'Ejecución / cumplimiento',cliente:'Dolores Concepción Pérez Islas',contra:'Demandante (fideicomiso)',juzgado:'Juzgado 2º Civil Oaxaca',monto:'$1,240,000',status:'Activo',nota:'Fase de cumplimiento. CFDI defectuoso Art. 29-A CFF + Art. 126 LISR + Art. 26-XI CFF.'},
+    {id:2,exp:'354/2025',tipo:'Amparo Revisión',materia:'Amparo',etapa:'Sentencia',cliente:'Dolores Concepción Pérez Islas',contra:'Tercero interesado',juzgado:'Tribunal Colegiado Oaxaca',monto:'—',status:'Activo',nota:'Amparo revisión concedido. Efectos en Exp. 654/2021.'},
+    {id:3,exp:'112/2024',tipo:'Constitución / FDI',materia:'Corporativo',etapa:'Asesoría / preventivo',cliente:'Silmexico / Proyecto Espadín',contra:'Desarrolladora Mar y Tierra',juzgado:'Notaría 4 Oaxaca',monto:'USD $7–9M',status:'Activo',nota:'LOI coastal real estate 25,257 m². Tres riesgos críticos identificados.'},
+    {id:4,exp:'089/2025',tipo:'Convenio Prendario',materia:'Mercantil',etapa:'Etapa inicial / admisión',cliente:'Vannesa García Soto',contra:'Francisco Leonel Pérez Aragón',juzgado:'—',monto:'Pendiente',status:'Activo',nota:'Garantía prendaria mercantil sin desplazamiento. LGTOC + CCo.'},
+    {id:5,exp:'205/2023',tipo:'Asesoría FDI / Expat',materia:'Corporativo',etapa:'Asesoría / preventivo',cliente:'Daryl (inversor US)',contra:'—',juzgado:'—',monto:'—',status:'En espera',nota:'Project Escape. SRL de CV administrador UK.'}
+  ];
+  CL21.eventos=[
+    {id:1,fecha:fmtISO(addDays(TODAY,3)),tipo:'Término procesal',asunto:'654/2021',cliente:'Dolores Pérez Islas',desc:'Vencimiento plazo objección CFDI defectuoso.',urgencia:'alta'},
+    {id:2,fecha:fmtISO(addDays(TODAY,7)),tipo:'Audiencia',asunto:'654/2021',cliente:'Dolores Pérez Islas',desc:'Audiencia de cumplimiento de sentencia.',urgencia:'alta'},
+    {id:3,fecha:fmtISO(addDays(TODAY,12)),tipo:'Reunión cliente',asunto:'112/2024',cliente:'Silmexico',desc:'Revisión final LOI y condiciones suspensivas.',urgencia:'media'},
+    {id:4,fecha:fmtISO(addDays(TODAY,18)),tipo:'Entrega de escrito',asunto:'089/2025',cliente:'Vannesa García Soto',desc:'Entrega convenio al registro notarial.',urgencia:'media'},
+    {id:5,fecha:fmtISO(addDays(TODAY,25)),tipo:'Vencimiento legal',asunto:'205/2023',cliente:'Daryl',desc:'Vencimiento plazo respuesta negociación.',urgencia:'baja'}
+  ];
+  CL21.clientes=[
+    {id:1,nombre:'Dolores Concepción Pérez Islas',tipo:'Persona física',status:'Activo',materias:'Mercantil, Amparo',nota:'Exp. 654/2021 y 354/2025.'},
+    {id:2,nombre:'Silmexico / Proyecto Espadín',tipo:'Persona moral',status:'Activo',materias:'Corporativo / FDI',nota:'Exp. 112/2024 LOI USD $7–9M.'},
+    {id:3,nombre:'Vannesa García Soto',tipo:'Persona física',status:'Activo',materias:'Mercantil',nota:'Exp. 089/2025.'},
+    {id:4,nombre:'Daryl (inversor US)',tipo:'Extranjero / FDI',status:'En espera',materias:'Corporativo',nota:'Exp. 205/2023 Project Escape.'},
+    {id:5,nombre:'Francisco Leonel Pérez Aragón',tipo:'Persona física',status:'Activo',materias:'Mercantil',nota:'Deudor en Exp. 089/2025.'}
+  ];
+  CL21.documentos={};
+}
+
+// ══════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════
+const BC={dashboard:'Dashboard',expedientes:'Expedientes','exp-detalle':'Expediente',agenda:'Agenda y Vencimientos',clientes:'Clientes',biblioteca:'Biblioteca Legislativa',reportes:'Reportes'};
+
+function nav(id,el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>{v.classList.remove('active');v.style.display='none';});
+  const v=document.getElementById('view-'+id);
+  if(v){v.style.display='';v.classList.add('active');}
+  document.getElementById('topbar-bc').innerHTML='<strong>'+(BC[id]||id)+'</strong>';
+  if(id==='expedientes')renderExp();
+  if(id==='agenda')renderAgenda();
+  if(id==='clientes')renderClientes();
+  if(id==='reportes')renderReportes();
+  if(id==='dashboard')renderDashboard();
+}
+
+function openExpDetalle(expId){
+  currentExpId=expId;
+  const exp=CL21.asuntos.find(a=>a.id===expId);
+  if(!exp)return;
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>{v.classList.remove('active');v.style.display='none';});
+  const v=document.getElementById('view-exp-detalle');
+  v.style.display=''; v.classList.add('active');
+  document.getElementById('topbar-bc').innerHTML='<span style="color:var(--text2);cursor:pointer" onclick="nav(\'expedientes\',null)">Expedientes</span> / <strong>'+exp.exp+'</strong>';
+
+  const ETAPA_B={
+    'Etapa inicial / admisión':'b-gray','Audiencia preliminar':'b-blue','Audiencia de juicio':'b-amber',
+    'Sentencia':'b-teal','Ejecución / cumplimiento':'b-purple','Amparo':'b-red','Asesoría / preventivo':'b-gold'
+  };
+  const MAT_C={Mercantil:'#1E5FA5',Corporativo:'#1D9E75',Fiscal:'#C9922A',Amparo:'#7c3aed',Civil:'#0891b2',Penal:'#dc2626',Agrario:'#65a30d',Familiar:'#db2777',Laboral:'#ea580c',Administrativo:'#6366f1',Constitucional:'#7c3aed'};
+  const timeline=(CL21.timeline||{})[expId]||[];
+
+  document.getElementById('exp-detail-main').innerHTML=`
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
+      <button class="btn-sec" onclick="nav('expedientes',null)" style="font-size:11px;padding:5px 10px"><i class="ti ti-arrow-left" style="font-size:12px"></i>Volver</button>
+      <span class="badge ${ETAPA_B[exp.etapa]||'b-gray'}">${exp.etapa}</span>
+      <span style="font-size:11px;font-weight:600;color:${MAT_C[exp.materia]||'#8A92A0'}">${exp.materia}</span>
+      <button class="btn-sec" onclick="openModal('asunto',${exp.id})" style="font-size:11px;padding:5px 10px;margin-left:auto"><i class="ti ti-edit" style="font-size:12px"></i>Editar ficha</button>
+    </div>
+
+    <div class="ficha">
+      <div class="ficha-title"><i class="ti ti-briefcase"></i>Expediente ${exp.exp}</div>
+      <div class="ficha-grid">
+        <div class="ficha-field"><div class="ficha-label">Tipo de juicio</div><div class="ficha-value">${exp.tipo}</div></div>
+        <div class="ficha-field"><div class="ficha-label">Status</div><div class="ficha-value">${exp.status}</div></div>
+        <div class="ficha-field"><div class="ficha-label">Cliente</div><div class="ficha-value" style="font-weight:500">${exp.cliente}</div></div>
+        <div class="ficha-field"><div class="ficha-label">Contraparte</div><div class="ficha-value">${exp.contra||'—'}</div></div>
+        <div class="ficha-field"><div class="ficha-label">Juzgado / Autoridad</div><div class="ficha-value">${exp.juzgado||'—'}</div></div>
+        <div class="ficha-field"><div class="ficha-label">Cuantía</div><div class="ficha-value">${exp.monto||'—'}</div></div>
+        <div class="ficha-field ficha-full"><div class="ficha-label">Nota de estado</div><div class="ficha-value" style="line-height:1.6">${exp.nota||'—'}</div></div>
+      </div>
+    </div>
+
+    <div class="ficha">
+      <div class="ficha-title"><i class="ti ti-history"></i>Historial del expediente</div>
+      <div class="timeline" id="timeline-list">
+        ${timeline.length ? timeline.map(t=>`
+          <div class="tl-item">
+            <div class="tl-dot" style="background:${t.color||'var(--blue)'}"></div>
+            <div class="tl-content">
+              <div class="tl-title">${t.texto}</div>
+              <div class="tl-meta">${fmtDate(t.fecha)} · ${t.autor||'Sistema'}</div>
+            </div>
+          </div>`).join('') : '<div style="font-size:12px;color:var(--text3);padding:8px 0">Sin entradas en el historial aún.</div>'}
+      </div>
+      <div style="margin-top:12px">
+        <textarea class="tl-input" id="tl-nueva" placeholder="Agregar nota al historial: actuación procesal, diligencia realizada, estado actual…"></textarea>
+        <button class="btn-add-nota" onclick="addNota(${exp.id})">+ Agregar nota</button>
+      </div>
+    </div>`;
+
+  renderDocs(expId);
+}
+
+async function addNota(expId){
+  const txt=fv('tl-nueva').trim();
+  if(!txt)return;
+  if(!CL21.timeline) CL21.timeline={};
+  if(!CL21.timeline[expId]) CL21.timeline[expId]=[];
+  CL21.timeline[expId].unshift({
+    texto:txt, fecha:fmtISO(TODAY),
+    autor:currentUser?currentUser.name:'Usuario',
+    color:'var(--blue)'
+  });
+  await forceSave();
+  openExpDetalle(expId);
+  showToast('Nota agregada al historial');
+}
+
+// ══════════════════════════════════════
+// RENDERS
+// ══════════════════════════════════════
+const ETAPA_B={'Etapa inicial / admisión':'b-gray','Audiencia preliminar':'b-blue','Audiencia de juicio':'b-amber','Sentencia':'b-teal','Ejecución / cumplimiento':'b-purple','Amparo':'b-red','Asesoría / preventivo':'b-gold'};
+const MAT_C={Mercantil:'#1E5FA5',Corporativo:'#1D9E75',Fiscal:'#C9922A',Amparo:'#7c3aed',Civil:'#0891b2',Penal:'#dc2626',Agrario:'#65a30d',Familiar:'#db2777',Laboral:'#ea580c',Administrativo:'#6366f1',Constitucional:'#7c3aed'};
+const TIPO_EVT_B={'Audiencia':'b-red','Término procesal':'b-amber','Vencimiento legal':'b-amber','Reunión cliente':'b-blue','Entrega de escrito':'b-teal'};
+
+function renderDashboard(){
+  document.getElementById('kpi-exp').textContent=CL21.asuntos.filter(a=>a.status==='Activo').length;
+  document.getElementById('kpi-urg').textContent=CL21.eventos.filter(e=>diffDays(e.fecha)>=0&&diffDays(e.fecha)<=7).length;
+  document.getElementById('kpi-cli').textContent=CL21.clientes.filter(c=>c.status==='Activo').length;
+  updateKpiDocs();
+
+  const urgent=CL21.eventos.filter(e=>diffDays(e.fecha)>=0&&diffDays(e.fecha)<=3);
+  document.getElementById('dash-alert').innerHTML=urgent.length?`<div class="alert-strip"><i class="ti ti-alert-triangle"></i><div><strong>Atención urgente</strong><p>${urgent.map(e=>e.asunto+': '+e.desc.substring(0,60)).join(' / ')}</p></div></div>`:'' ;
+
+  const criticos=CL21.asuntos.filter(a=>['Ejecución / cumplimiento','Amparo'].includes(a.etapa)).slice(0,4);
+  document.getElementById('dash-exp-list').innerHTML=criticos.length?criticos.map(a=>`
+    <div class="dash-item" style="cursor:pointer" onclick="openExpDetalle(${a.id})">
+      <div class="dash-item-dot" style="background:${MAT_C[a.materia]||'#8A92A0'}"></div>
+      <div style="flex:1"><div class="dash-item-title">${a.exp} — ${a.tipo}</div><div class="dash-item-sub">${a.cliente} · ${a.etapa}</div></div>
+      <span class="badge ${ETAPA_B[a.etapa]||'b-gray'}">${a.materia}</span>
+    </div>`).join(''):'<div class="empty" style="padding:20px"><i class="ti ti-check" style="font-size:24px"></i><p>Sin expedientes críticos</p></div>';
+
+  const proxEvts=CL21.eventos.filter(e=>diffDays(e.fecha)>=0).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).slice(0,4);
+  document.getElementById('dash-evt-list').innerHTML=proxEvts.map(e=>{
+    const d=diffDays(e.fecha);
+    const dLabel=d===0?'Hoy':d===1?'Mañana':d+'d';
+    const dColor=d<=3?'var(--red)':d<=7?'var(--amber)':'var(--teal)';
+    return `<div class="dash-item">
+      <div class="dash-item-dot" style="background:${dColor}"></div>
+      <div style="flex:1"><div class="dash-item-title">${e.tipo} · ${e.asunto}</div><div class="dash-item-sub">${e.cliente}</div></div>
+      <span style="font-size:11px;font-weight:600;color:${dColor};white-space:nowrap">${dLabel}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderExp(){
+  const q=(fv('s-exp')||'').toLowerCase();
+  const fe=fv('f-etapa'), fm=fv('f-mat');
+  let list=CL21.asuntos.filter(a=>{
+    const mq=!q||(a.exp+a.tipo+a.cliente+a.juzgado+a.nota).toLowerCase().includes(q);
+    return mq&&(!fe||a.etapa===fe)&&(!fm||a.materia===fm);
+  });
+  const el=document.getElementById('exp-body');
+  let html=`<div class="kpi-strip">
+    <div class="kpi-s"><div class="kpi-s-val">${CL21.asuntos.length}</div><div class="kpi-s-label">Total</div></div>
+    <div class="kpi-s"><div class="kpi-s-val" style="color:var(--teal)">${CL21.asuntos.filter(a=>a.status==='Activo').length}</div><div class="kpi-s-label">Activos</div></div>
+    <div class="kpi-s"><div class="kpi-s-val" style="color:var(--purple)">${CL21.asuntos.filter(a=>a.etapa==='Ejecución / cumplimiento'||a.etapa==='Amparo').length}</div><div class="kpi-s-label">Críticos</div></div>
+    <div class="kpi-s"><div class="kpi-s-val" style="color:var(--blue)">${Object.values(CL21.documentos||{}).reduce((s,a)=>s+(a||[]).length,0)}</div><div class="kpi-s-label">Docs en Drive</div></div>
+  </div>`;
+  if(!list.length){html+='<div class="empty"><i class="ti ti-briefcase"></i><p>Sin expedientes con estos filtros.</p></div>';el.innerHTML=html;return;}
+  html+=`<div class="tbl-wrap"><div class="tbl-hdr"><span class="tbl-hdr-title">Expedientes en trámite</span><span class="tbl-hdr-count">${list.length} registro(s)</span></div>
+  <table><thead><tr><th>Expediente</th><th>Tipo / Materia</th><th>Cliente</th><th>Etapa</th><th>Docs</th><th>Acciones</th></tr></thead><tbody>`;
+  list.forEach(a=>{
+    const mc=MAT_C[a.materia]||'#8A92A0';
+    const ndocs=(CL21.documentos[a.id]||[]).length;
+    html+=`<tr>
+      <td><strong style="cursor:pointer;color:var(--blue)" onclick="openExpDetalle(${a.id})">${a.exp}</strong><br><span style="font-size:10px;color:var(--text3)">${a.juzgado||'—'}</span></td>
+      <td><span style="font-size:10px;font-weight:600;color:${mc}">${a.materia}</span><br><span style="font-size:11px;color:var(--text2)">${a.tipo}</span></td>
+      <td style="max-width:140px"><div style="font-size:12px;font-weight:500">${a.cliente}</div>${a.contra&&a.contra!=='—'?'<div style="font-size:10px;color:var(--text3)">vs. '+a.contra+'</div>':''}</td>
+      <td><span class="badge ${ETAPA_B[a.etapa]||'b-gray'}">${a.etapa}</span></td>
+      <td><span style="font-size:12px;font-weight:600;color:${ndocs>0?'var(--blue)':'var(--text3)'}">${ndocs>0?ndocs+'<span style="font-size:10px;font-weight:400;color:var(--text3)"> docs</span>':'—'}</span></td>
+      <td><div class="row-actions">
+        <button class="btn-row" onclick="openExpDetalle(${a.id})"><i class="ti ti-folder-open" style="font-size:12px"></i>Abrir</button>
+        <button class="btn-row" onclick="openModal('asunto',${a.id})">Editar</button>
+        <button class="btn-row danger" onclick="delAsunto(${a.id})">✕</button>
+      </div></td>
+    </tr>`;
+  });
+  html+=`</tbody></table></div>`;el.innerHTML=html;
+}
+
+function renderAgenda(){
+  const periodo=parseInt(fv('f-periodo'))||30;
+  const ft=fv('f-tipo-e');
+  let list=CL21.eventos.filter(e=>{const d=diffDays(e.fecha);return(periodo===0||d<=periodo)&&(!ft||e.tipo===ft)&&d>=-1;}).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha));
+  const el=document.getElementById('agenda-body');
+  let html=`<div class="kpi-strip">
+    <div class="kpi-s"><div class="kpi-s-val">${CL21.eventos.length}</div><div class="kpi-s-label">Total</div></div>
+    <div class="kpi-s"><div class="kpi-s-val" style="color:var(--red)">${CL21.eventos.filter(e=>diffDays(e.fecha)<0).length}</div><div class="kpi-s-label">Vencidos</div></div>
+    <div class="kpi-s"><div class="kpi-s-val" style="color:var(--amber)">${CL21.eventos.filter(e=>diffDays(e.fecha)>=0&&diffDays(e.fecha)<=7).length}</div><div class="kpi-s-label">≤ 7 días</div></div>
+  </div>`;
+  if(!list.length){html+='<div class="empty"><i class="ti ti-calendar-event"></i><p>Sin eventos en el período.</p></div>';el.innerHTML=html;return;}
+  html+=`<div class="tbl-wrap"><div class="tbl-hdr"><span class="tbl-hdr-title">Vencimientos y audiencias</span><span class="tbl-hdr-count">${list.length}</span></div>
+  <table><thead><tr><th>Fecha</th><th>Días</th><th>Tipo</th><th>Expediente</th><th>Cliente</th><th>Descripción</th><th></th></tr></thead><tbody>`;
+  list.forEach(e=>{
+    const d=diffDays(e.fecha);
+    const rc=d<=3?'urg-red':d<=7?'urg-amber':'';
+    const dc=d<=3?'var(--red)':d<=7?'var(--amber)':'var(--teal)';
+    const dl=d===0?'<strong style="color:var(--red)">Hoy</strong>':d===1?'<strong style="color:var(--red)">Mañana</strong>':d<0?`<span style="color:var(--red)">Vencido</span>`:`${d}d`;
+    html+=`<tr class="${rc}"><td style="font-size:12px;white-space:nowrap;font-weight:500">${fmtDate(e.fecha)}</td>
+    <td>${dl}</td><td><span class="badge ${TIPO_EVT_B[e.tipo]||'b-gray'}">${e.tipo}</span></td>
+    <td style="font-size:12px;font-weight:500">${e.asunto||'—'}</td>
+    <td style="font-size:12px">${e.cliente||'—'}</td>
+    <td style="font-size:11px;color:var(--text2);max-width:200px">${(e.desc||'').substring(0,100)}</td>
+    <td><div class="row-actions"><button class="btn-row" onclick="openModal('evento',${e.id})">Editar</button><button class="btn-row danger" onclick="delEvento(${e.id})">✕</button></div></td></tr>`;
+  });
+  html+=`</tbody></table></div>`;el.innerHTML=html;
+}
+
+function renderClientes(){
+  const q=(fv('s-cli')||'').toLowerCase();
+  const fs=fv('f-sta-c');
+  let list=CL21.clientes.filter(c=>(!q||c.nombre.toLowerCase().includes(q)||(c.nota||'').toLowerCase().includes(q))&&(!fs||c.status===fs));
+  const el=document.getElementById('cli-body');
+  let html=`<div class="kpi-strip">
+    <div class="kpi-s"><div class="kpi-s-val">${CL21.clientes.length}</div><div class="kpi-s-label">Total</div></div>
+    <div class="kpi-s"><div class="kpi-s-val" style="color:var(--teal)">${CL21.clientes.filter(c=>c.status==='Activo').length}</div><div class="kpi-s-label">Activos</div></div>
+  </div>`;
+  if(!list.length){html+='<div class="empty"><i class="ti ti-users"></i><p>Sin clientes con estos filtros.</p></div>';el.innerHTML=html;return;}
+  html+=`<div class="tbl-wrap"><div class="tbl-hdr"><span class="tbl-hdr-title">Clientes</span><span class="tbl-hdr-count">${list.length}</span></div>
+  <table><thead><tr><th>Cliente</th><th>Tipo</th><th>Status</th><th>Asuntos</th><th>Materias</th><th></th></tr></thead><tbody>`;
+  list.forEach(c=>{
+    const sb=c.status==='Activo'?'b-teal':c.status==='En espera'?'b-amber':'b-gray';
+    const n=CL21.asuntos.filter(a=>a.cliente.toLowerCase().includes(c.nombre.split(' ')[0].toLowerCase())).length;
+    html+=`<tr><td style="font-weight:500">${c.nombre}</td><td style="font-size:11px;color:var(--text2)">${c.tipo}</td>
+    <td><span class="badge ${sb}">${c.status}</span></td>
+    <td style="text-align:center;font-weight:600;color:var(--blue)">${n||'—'}</td>
+    <td style="font-size:11px;color:var(--text2)">${c.materias||'—'}</td>
+    <td><div class="row-actions"><button class="btn-row" onclick="openModal('cliente',${c.id})">Editar</button><button class="btn-row danger" onclick="delCliente(${c.id})">✕</button></div></td></tr>`;
+  });
+  html+=`</tbody></table></div>`;el.innerHTML=html;
+}
+
+function renderReportes(){
+  const el=document.getElementById('rep-body');
+  const proxEvts=CL21.eventos.filter(e=>diffDays(e.fecha)>=0&&diffDays(e.fecha)<=30).sort((a,b)=>new Date(a.fecha)-new Date(b.fecha)).slice(0,6);
+  let html=`<div class="kpi-strip">
+    <div class="kpi-s"><div class="kpi-s-val">${CL21.asuntos.filter(a=>a.status==='Activo').length}</div><div class="kpi-s-label">Asuntos activos</div></div>
+    <div class="kpi-s"><div class="kpi-s-val" style="color:var(--red)">${CL21.eventos.filter(e=>diffDays(e.fecha)>=0&&diffDays(e.fecha)<=7).length}</div><div class="kpi-s-label">Urgentes ≤7d</div></div>
+    <div class="kpi-s"><div class="kpi-s-val" style="color:var(--teal)">${CL21.clientes.filter(c=>c.status==='Activo').length}</div><div class="kpi-s-label">Clientes activos</div></div>
+    <div class="kpi-s"><div class="kpi-s-val" style="color:var(--blue)">${Object.values(CL21.documentos||{}).reduce((s,a)=>s+(a||[]).length,0)}</div><div class="kpi-s-label">Docs en Drive</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="tbl-wrap"><div class="tbl-hdr"><span class="tbl-hdr-title">Expedientes por etapa</span></div>
+  <table><thead><tr><th>Etapa</th><th>Expedientes</th></tr></thead><tbody>`;
+  ['Ejecución / cumplimiento','Amparo','Audiencia de juicio','Audiencia preliminar','Etapa inicial / admisión','Asesoría / preventivo','Sentencia'].forEach(e=>{
+    const n=CL21.asuntos.filter(a=>a.etapa===e).length;
+    if(n)html+=`<tr><td><span class="badge ${ETAPA_B[e]||'b-gray'}">${e}</span></td><td style="font-weight:600;color:var(--navy)">${n}</td></tr>`;
+  });
+  html+=`</tbody></table></div>
+  <div class="tbl-wrap"><div class="tbl-hdr"><span class="tbl-hdr-title">Próximos 30 días</span></div>
+  <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Exp.</th></tr></thead><tbody>`;
+  proxEvts.forEach(e=>{
+    const d=diffDays(e.fecha);
+    html+=`<tr class="${d<=3?'urg-red':d<=7?'urg-amber':''}"><td style="font-size:12px;white-space:nowrap">${d<=3?'<strong style="color:var(--red)">':d<=7?'<span style="color:var(--amber)">':'<span>'}${fmtDate(e.fecha)}${d<=3?'</strong>':'</span>'}</td>
+    <td><span class="badge ${TIPO_EVT_B[e.tipo]||'b-gray'}">${e.tipo}</span></td>
+    <td style="font-size:12px">${e.asunto||'—'}</td></tr>`;
+  });
+  html+=`</tbody></table></div></div>`;
+  el.innerHTML=html;
+}
+
+function updateBadges(){
+  document.getElementById('nb-exp').textContent=CL21.asuntos.filter(a=>a.status==='Activo').length;
+  const u=CL21.eventos.filter(e=>diffDays(e.fecha)<=7&&diffDays(e.fecha)>=0).length;
+  const nb=document.getElementById('nb-ag');nb.textContent=u;nb.style.display=u?'':'none';
+}
+
+function renderAll(){updateBadges();renderDashboard();}
+
+// ══════════════════════════════════════
+// BIBLIOTECA RAG (inline)
+// ══════════════════════════════════════
+// ══════════════════════════════════════
+// BIBLIOTECA LEGISLATIVA — PDF + DRIVE
+// ══════════════════════════════════════
+
+// In-memory index: { leyKey: { nombre, color, articulos: [{num, titulo, texto}] } }
+let BIB_INDEX = {};
+let bibScope = 'all';
+let bibResults = [];
+
+const BIB_COLORS = {
+  'CCo':'#1E5FA5','LGTOC':'#0F6E56','LSM':'#1D9E75','CFF':'#C9922A',
+  'LISR':'#B87820','LAmp':'#7c3aed','CCOax':'#854F0B','CFPC':'#185FA5'
+};
+
+// ── PDF.js loader ──
+async function loadPDFJS() {
+  if(window.pdfjsLib) return;
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve();
+    };
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+// ── Extract text from PDF ──
+async function extractPDFText(file) {
+  await loadPDFJS();
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+  const total = pdf.numPages;
+  for(let i = 1; i <= total; i++) {
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    const pageText = tc.items.map(item => item.str).join(' ');
+    fullText += pageText + '\n';
+    // Update progress
+    const pct = Math.round((i/total)*70);
+    updateBibProgress(pct, `Extrayendo texto: página ${i} de ${total}…`);
+  }
+  return fullText;
+}
+
+// ── Parse articles from text ──
+function parseArticulos(text, leyNombre) {
+  const articulos = [];
+  // Multiple patterns for Mexican law formatting
+  const patterns = [
+    /Artículo\s+(\d+(?:\s*[Bb]is|\s*[Tt]er|\s*[Qq]uáter)?(?:\s*[A-Z])?)\s*[.\-–—]?\s*/g,
+    /ARTÍCULO\s+(\d+(?:\s*BIS|\s*TER|\s*QUÁTER)?(?:\s*[A-Z])?)\s*[.\-–—]?\s*/g,
+    /Art\.\s*(\d+(?:\s*[Bb]is)?)\s*[.\-–—]?\s*/g
+  ];
+
+  // Use first pattern that gives reasonable results
+  let matches = [];
+  for(const pattern of patterns) {
+    const m = [...text.matchAll(new RegExp(pattern.source, pattern.flags))];
+    if(m.length > matches.length) matches = m;
+  }
+
+  if(matches.length === 0) {
+    // Fallback: treat whole text as one block
+    return [{ num: '1', titulo: leyNombre, texto: text.substring(0, 5000) }];
+  }
+
+  for(let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    const num = match[1].trim().replace(/\s+/g, ' ');
+    const start = match.index + match[0].length;
+    const end = i < matches.length - 1 ? matches[i+1].index : start + 2000;
+    const texto = text.substring(start, Math.min(end, start + 3000)).trim()
+      .replace(/\s+/g, ' ')
+      .substring(0, 1500);
+
+    if(texto.length > 20) {
+      articulos.push({
+        num: `Art. ${num}`,
+        titulo: `Artículo ${num}`,
+        texto: texto
+      });
+    }
+  }
+  return articulos;
+}
+
+// ── Detect law name from filename ──
+function detectLeyKey(filename) {
+  const name = filename.toLowerCase().replace(/[_\-\s]/g, '');
+  if(name.includes('comercio') || name.includes('cco')) return { key:'CCo', nombre:'Código de Comercio' };
+  if(name.includes('titulos') || name.includes('lgtoc') || name.includes('operaciones')) return { key:'LGTOC', nombre:'LGTOC — Títulos y Operaciones de Crédito' };
+  if(name.includes('sociedades') || name.includes('lsm')) return { key:'LSM', nombre:'Ley de Sociedades Mercantiles' };
+  if(name.includes('fiscal') && name.includes('codigo') || name.includes('cff')) return { key:'CFF', nombre:'Código Fiscal de la Federación' };
+  if(name.includes('renta') || name.includes('lisr')) return { key:'LISR', nombre:'Ley del Impuesto sobre la Renta' };
+  if(name.includes('amparo') || name.includes('lamp')) return { key:'LAmp', nombre:'Ley de Amparo' };
+  if(name.includes('oaxaca') || name.includes('ccoax') || name.includes('civiloax')) return { key:'CCOax', nombre:'Código Civil Estado de Oaxaca' };
+  if(name.includes('procedimientos') || name.includes('cfpc')) return { key:'CFPC', nombre:'CFPC — Procedimientos Civiles' };
+  // Default: use filename as key
+  const base = filename.replace('.pdf','').replace(/[^a-zA-Z0-9]/g,'').substring(0,10);
+  return { key: base, nombre: filename.replace('.pdf','') };
+}
+
+function updateBibProgress(pct, text) {
+  document.getElementById('bib-upload-progress').style.display = 'block';
+  document.getElementById('bib-progress-bar').style.width = pct + '%';
+  document.getElementById('bib-progress-text').textContent = text;
+}
+
+function hideBibProgress() {
+  setTimeout(() => {
+    document.getElementById('bib-upload-progress').style.display = 'none';
+    document.getElementById('bib-progress-bar').style.width = '0%';
+  }, 1500);
+}
+
+// ── Handle file drop/select ──
+function bibHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('bib-upload-zone').style.borderColor = '';
+  document.getElementById('bib-upload-zone').style.background = '';
+  [...e.dataTransfer.files].filter(f => f.type === 'application/pdf').forEach(bibProcessPDF);
+}
+
+function bibHandleFiles(input) {
+  [...input.files].forEach(bibProcessPDF);
+  input.value = '';
+}
+
+async function bibProcessPDF(file) {
+  const { key, nombre } = detectLeyKey(file.name);
+  updateBibProgress(5, `Leyendo "${file.name}"…`);
+
+  try {
+    const text = await extractPDFText(file);
+    updateBibProgress(75, `Indexando artículos de ${nombre}…`);
+    const articulos = parseArticulos(text, nombre);
+    updateBibProgress(90, `Guardando ${articulos.length} artículos en Drive…`);
+
+    BIB_INDEX[key] = { nombre, color: BIB_COLORS[key] || '#1E5FA5', articulos, archivo: file.name };
+
+    // Save to Drive
+    await saveBibToDrive(key);
+    updateBibProgress(100, `✓ ${articulos.length} artículos indexados de ${nombre}`);
+    hideBibProgress();
+    updateBibSidebar();
+    showToast(`${nombre}: ${articulos.length} artículos indexados`);
+
+  } catch(err) {
+    console.error('PDF error:', err);
+    updateBibProgress(0, 'Error al procesar el PDF. Verifique que sea texto seleccionable.');
+    hideBibProgress();
+    showToast('Error al procesar: ' + file.name);
+  }
+}
+
+// ── Save/load biblioteca from Drive ──
+async function saveBibToDrive(leyKey) {
+  if(!accessToken) return;
+  const data = BIB_INDEX[leyKey];
+  const fileName = `CL21_BIB_${leyKey}.json`;
+  const body = JSON.stringify(data, null, 2);
+
+  // Check if file exists
+  const list = await gapi.client.drive.files.list({
+    q: `name='${fileName}' and trashed=false`,
+    fields: 'files(id)'
+  });
+
+  const meta = { name: fileName, mimeType: 'application/json' };
+  if(CFG.folderId) meta.parents = [CFG.folderId];
+
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+  form.append('file', new Blob([body], { type: 'application/json' }));
+
+  if(list.result.files && list.result.files.length > 0) {
+    // Update existing
+    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${list.result.files[0].id}?uploadType=media`, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+      body
+    });
+  } else {
+    // Create new
+    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + accessToken },
+      body: form
+    });
+  }
+}
+
+async function bibLoadFromDrive() {
+  if(!accessToken) { showToast('Inicie sesión para cargar desde Drive'); return; }
+  showSync('Cargando biblioteca desde Drive…');
+  try {
+    const list = await gapi.client.drive.files.list({
+      q: `name contains 'CL21_BIB_' and trashed=false`,
+      fields: 'files(id,name)'
+    });
+    const files = list.result.files || [];
+    if(!files.length) { showToast('No se encontraron ordenamientos en Drive. Suba los PDFs primero.'); return; }
+
+    let loaded = 0;
+    for(const file of files) {
+      try {
+        const resp = await gapi.client.drive.files.get({ fileId: file.id, alt: 'media' });
+        const data = JSON.parse(resp.body);
+        const key = file.name.replace('CL21_BIB_','').replace('.json','');
+        BIB_INDEX[key] = data;
+        loaded++;
+        showSync(`Cargando ${loaded}/${files.length} ordenamientos…`);
+      } catch(e) { console.error('Error loading', file.name, e); }
+    }
+    updateBibSidebar();
+    showSync(`${loaded} ordenamientos cargados`, false, true);
+    showToast(`Biblioteca cargada: ${loaded} ordenamientos`);
+  } catch(e) {
+    showSync('Error al cargar desde Drive', false, true);
+    showToast('Error de conexión con Drive');
+  }
+}
+
+// ── Update sidebar ──
+function updateBibSidebar() {
+  const keys = Object.keys(BIB_INDEX);
+  const total = keys.reduce((s,k) => s + (BIB_INDEX[k].articulos||[]).length, 0);
+
+  // Stats
+  const stats = document.getElementById('bib-stats');
+  if(stats) stats.textContent = keys.length + ' ordenamientos · ' + total.toLocaleString('es-MX') + ' artículos indexados';
+
+  // Scope chips
+  const chipsEl = document.getElementById('bib-scope-chips');
+  if(chipsEl) {
+    chipsEl.innerHTML = '';
+    const allChip = document.createElement('span');
+    allChip.className = 'scope-chip active';
+    allChip.setAttribute('style','font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--navy);color:#fff;cursor:pointer;white-space:nowrap');
+    allChip.textContent = 'Todos (' + total.toLocaleString('es-MX') + ')';
+    allChip.onclick = function(){ bibSetScope('all', this); };
+    chipsEl.appendChild(allChip);
+    keys.forEach(k => {
+      const ley = BIB_INDEX[k];
+      const n = (ley.articulos||[]).length;
+      const chip = document.createElement('span');
+      chip.className = 'scope-chip';
+      chip.setAttribute('data-scope', k);
+      chip.setAttribute('style','font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;white-space:nowrap');
+      chip.textContent = k + ' (' + n + ')';
+      chip.onclick = function(){ bibSetScope(k, this); };
+      chipsEl.appendChild(chip);
+    });
+  }
+
+  // Ley list in sidebar
+  const listEl = document.getElementById('bib-ley-list');
+  if(listEl) {
+    if(!keys.length) {
+      listEl.innerHTML = '<div style="padding:20px 14px;text-align:center;color:var(--text3);font-size:12px"><i class="ti ti-books" style="font-size:28px;opacity:.3;display:block;margin-bottom:8px"></i>Suba los PDFs para comenzar</div>';
+      return;
+    }
+        listEl.innerHTML = '';
+    keys.forEach(k => {
+      const ley = BIB_INDEX[k];
+      const n = (ley.articulos||[]).length;
+      const color = ley.color || '#1E5FA5';
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;border-left:2px solid transparent;transition:all .12s';
+      div.onmouseover = function(){ this.style.background='var(--bg)'; };
+      div.onmouseout = function(){ this.style.background=''; };
+      div.onclick = function(){ bibSetScopeByKey(k); };
+      div.innerHTML = '<div style="width:8px;height:8px;border-radius:50%;background:'+color+';flex-shrink:0"></div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+k+'</div>' +
+          '<div style="font-size:10px;color:var(--text3)">'+n.toLocaleString('es-MX')+' artículos</div>' +
+        '</div>';
+      const btn = document.createElement('button');
+      btn.style.cssText = 'background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 4px';
+      btn.title = 'Eliminar';
+      btn.textContent = '✕';
+      btn.onclick = function(e){ e.stopPropagation(); bibDeleteLey(k); };
+      div.appendChild(btn);
+      listEl.appendChild(div);
+    });;
+  }
+}
+
+function bibSetScope(s, el) {
+  bibScope = s;
+  document.querySelectorAll('#bib-scope-chips .scope-chip').forEach(c => {
+    c.style.background = 'var(--surface2)'; c.style.color = 'var(--text2)';
+    c.classList.remove('active');
+  });
+  if(el) { el.style.background = 'var(--navy)'; el.style.color = '#fff'; el.classList.add('active'); }
+}
+
+function bibSetScopeByKey(k) {
+  bibScope = k;
+  const chips = document.querySelectorAll('#bib-scope-chips .scope-chip');
+  chips.forEach(c => { c.style.background='var(--surface2)';c.style.color='var(--text2)'; });
+  const target = [...chips].find(c => c.getAttribute('data-scope') === k);
+  if(target) { target.style.background='var(--navy)';target.style.color='#fff'; }
+}
+
+async function bibDeleteLey(key) {
+  if(!confirm(`¿Eliminar ${key} de la biblioteca?`)) return;
+  delete BIB_INDEX[key];
+  // Delete from Drive
+  if(accessToken) {
+    try {
+      const list = await gapi.client.drive.files.list({ q:`name='CL21_BIB_${key}.json' and trashed=false`, fields:'files(id)' });
+      if(list.result.files && list.result.files.length > 0) {
+        await gapi.client.drive.files.delete({ fileId: list.result.files[0].id });
+      }
+    } catch(e) {}
+  }
+  updateBibSidebar();
+  showToast(key + ' eliminado de la biblioteca');
+}
+
+// ── SEARCH ──
+function bibScore(q, art) {
+  const ql = q.toLowerCase();
+  const corpus = (art.num + ' ' + art.texto).toLowerCase();
+  let s = 0;
+  ql.split(/\s+/).filter(w => w.length > 2).forEach(w => {
+    if(corpus.includes(w)) s += 2;
+    if(art.num.toLowerCase().includes(w)) s += 5;
+  });
+  const m = ql.match(/art[íi]culo?\s*\.?\s*(\d+)|art\.\s*(\d+)/i);
+  if(m) { const n = m[1]||m[2]; if(art.num.includes(n)) s += 15; }
+  return s;
+}
+
+function bibHL(text, q) {
+  return q.split(/\s+/).filter(w => w.length > 3).reduce((t, w) => {
+    return t.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'),
+      '<em style="background:#C9922A22;color:#8B5E0A;font-style:normal;padding:0 2px;border-radius:2px">$1</em>');
+  }, text);
+}
+
+function bibSearch() {
+  const q = (document.getElementById('bib-q')||{}).value || '';
+  if(!q.trim()) return;
+
+  const keys = bibScope === 'all' ? Object.keys(BIB_INDEX) : [bibScope].filter(k => BIB_INDEX[k]);
+
+  if(!keys.length) {
+    document.getElementById('bib-results').innerHTML = '<div class="empty"><i class="ti ti-books"></i><p>No hay ordenamientos indexados aún.<br>Suba los PDFs de las leyes o use "Cargar desde Drive".</p></div>';
+    return;
+  }
+
+  // Search across all selected laws
+  let allResults = [];
+  keys.forEach(k => {
+    const ley = BIB_INDEX[k];
+    const color = ley.color || '#1E5FA5';
+    (ley.articulos || []).forEach(art => {
+      const sc = bibScore(q, art);
+      if(sc > 0) allResults.push({ ...art, leyKey: k, leyNombre: ley.nombre, color, sc });
+    });
+  });
+
+  allResults = allResults.sort((a, b) => b.sc - a.sc).slice(0, 15);
+  bibResults = allResults;
+  bibRenderResults(q, allResults);
+}
+
+function bibClearSearch() {
+  const q = document.getElementById('bib-q');
+  if(q) q.value = '';
+  document.getElementById('bib-results').innerHTML = '<div class="empty"><i class="ti ti-search"></i><p>Ingrese una consulta para buscar en los ordenamientos cargados.</p></div>';
+}
+
+function bibRenderResults(q, results) {
+  const el = document.getElementById('bib-results');
+  if(!results.length) {
+    el.innerHTML = '<div class="empty"><i class="ti ti-search-off"></i><p>Sin resultados. Intente otros términos o amplíe el alcance a todos los ordenamientos.</p></div>';
+    return;
+  }
+
+  const totalArts = Object.values(BIB_INDEX).reduce((s,l)=>s+(l.articulos||[]).length,0);
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <span style="font-size:13px;color:var(--text2)">${results.length} resultado(s) en ${Object.keys(BIB_INDEX).length} ordenamientos · ${totalArts.toLocaleString('es-MX')} arts. indexados</span>
+    <button class="btn-primary" id="btn-bib-ia" onclick="bibGenAnalysis('${q.replace(/'/g,"\'")}')">
+      <i class="ti ti-sparkles" style="font-size:13px"></i>Generar análisis con IA
+    </button>
+  </div>
+  <div id="bib-analysis-ph"></div>`;
+
+  results.forEach(a => {
+    const txt = bibHL(a.texto.substring(0, 400) + (a.texto.length > 400 ? '…' : ''), q);
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px;margin-bottom:9px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:600;color:#fff;background:${a.color};padding:2px 8px;border-radius:4px;white-space:nowrap">${a.num}</span>
+        <span style="font-size:11px;color:var(--text3)">${a.leyNombre}</span>
+        <span style="font-size:10px;background:var(--surface2);color:var(--text3);padding:1px 7px;border-radius:10px;border:1px solid var(--border);margin-left:auto">Relevancia: ${a.sc}</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--text);line-height:1.65">${txt}</div>
+    </div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+async function bibGenAnalysis(q) {
+  const btn = document.getElementById('btn-bib-ia');
+  if(btn) { btn.disabled = true; btn.innerHTML = '<div class="dots"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></div>'; }
+
+  const arts = bibResults.slice(0, 6);
+  const ctx = arts.map(a => `[${a.num} · ${a.leyNombre}]\n${a.texto.substring(0,800)}`).join('\n\n');
+
+  try {
+    const systemPrompt = 'Eres el asistente jurídico de CL21 · Círculo Legal 21, despacho del Dr. J. Abel Ramírez Ruiz, Doctor en Derecho Corporativo con posgrado en Dirección Financiera, especializado en derecho mercantil, corporativo y fiscal mexicano. Generas análisis jurídicos con rigor dogmático, lenguaje técnico humanizado, citando artículos con precisión e identificando conexiones normativas entre ordenamientos. Responde en español jurídico formal.';
+    const userPrompt = 'Consulta: "' + q + '"\n\nArtículos recuperados de la biblioteca:\n' + ctx + '\n\nGenera análisis jurídico técnico que: 1) Responda la consulta citando artículos por número exacto y ordenamiento; 2) Explique el alcance normativo; 3) Identifique conexiones entre ordenamientos cuando sea relevante; 4) Señale criterios de interpretación o controversias prácticas; 5) Concluya con síntesis operativa para el litigante. Extensión: 3-5 párrafos. Tono técnico-doctrinal humanizado.';
+    const txt = await callGemini(systemPrompt, userPrompt, 1200);
+    const labels = arts.slice(0,4).map(a => a.leyKey + ' ' + a.num.replace('Art.','').trim()).join(' · ');
+    const ph = document.getElementById('bib-analysis-ph');
+    if(ph) ph.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px">
+      <div style="background:var(--navy);padding:11px 16px;display:flex;align-items:center;gap:8px">
+        <i class="ti ti-scale" style="color:var(--gold)"></i>
+        <span style="font-size:13px;color:#fff;font-weight:500">Análisis jurídico · IA</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.4);margin-left:auto">Fuentes: ${labels}</span>
+      </div>
+      <div style="padding:16px;font-size:13px;color:var(--text);line-height:1.75">
+        ${txt.split('\n').filter(l=>l.trim()).map(l=>'<p style="margin-bottom:10px">'+l.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')+'</p>').join('')}
+      </div>
+    </div>`;
+    if(btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-sparkles" style="font-size:13px"></i>Regenerar análisis'; }
+  } catch(e) {
+    const ph = document.getElementById('bib-analysis-ph');
+    if(ph) ph.innerHTML = `<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:10px;padding:14px;margin-bottom:14px"><strong style="color:var(--red)">Error al conectar con el servicio de IA</strong><p style="font-size:12px;color:#7f1d1d;margin-top:4px">${e.message}</p></div>`;
+    if(btn) { btn.disabled = false; btn.innerHTML = 'Generar análisis con IA'; }
+  }
+}
+
+// saveAnthropicKey removed - using Gemini
+
+// Auto-load biblioteca from Drive when app starts
+async function bibAutoLoad() {
+  if(!accessToken) return;
+  try {
+    const list = await gapi.client.drive.files.list({
+      q: `name contains 'CL21_BIB_' and trashed=false`,
+      fields: 'files(id,name)'
+    });
+    const files = list.result.files || [];
+    for(const file of files) {
+      try {
+        const resp = await gapi.client.drive.files.get({ fileId: file.id, alt: 'media' });
+        const data = JSON.parse(resp.body);
+        const key = file.name.replace('CL21_BIB_','').replace('.json','');
+        BIB_INDEX[key] = data;
+      } catch(e) {}
+    }
+    if(files.length) updateBibSidebar();
+  } catch(e) {}
+}
+
+// ══════════════════════════════════════
+// MODALES
+// ══════════════════════════════════════
+let mMode='',mEditId=null;
+function openModal(type,id=null){
+  mMode=type;mEditId=id;
+  const data=id?(type==='asunto'?CL21.asuntos:type==='evento'?CL21.eventos:CL21.clientes).find(x=>x.id===id):null;
+  const el=document.getElementById('modal-inner');
+  if(type==='asunto')el.innerHTML=tplAsunto(data);
+  else if(type==='evento')el.innerHTML=tplEvento(data);
+  else el.innerHTML=tplCliente(data);
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
+
+function tplAsunto(d){
+  const etapas=['Etapa inicial / admisión','Audiencia preliminar','Audiencia de juicio','Sentencia','Ejecución / cumplimiento','Amparo','Asesoría / preventivo'];
+  return `<div class="modal-title">${d?'Editar expediente':'Nuevo expediente'}</div><div class="modal-sub">Datos del asunto</div>
+  <div class="modal-grid">
+    <div class="f-group"><label class="f-label">No. Expediente</label><input class="f-input" id="m-exp" value="${d?d.exp:''}"></div>
+    <div class="f-group"><label class="f-label">Tipo de juicio</label><input class="f-input" id="m-tipo" value="${d?d.tipo:''}"></div>
+    <div class="f-group"><label class="f-label">Materia</label><select class="f-select" id="m-mat" onchange="toggleOtraMateria(this)">${['Mercantil','Corporativo','Fiscal','Amparo','Civil','Penal','Agrario','Familiar','Laboral','Administrativo','Constitucional','Otra'].map(m=>`<option ${d&&d.materia===m?'selected':''}>${m}</option>`).join('')}</select></div>
+    <div class="f-group"><label class="f-label">Etapa procesal</label><select class="f-select" id="m-etapa">${etapas.map(e=>`<option ${d&&d.etapa===e?'selected':''}>${e}</option>`).join('')}</select></div>
+    <div class="f-group modal-full" style="position:relative"><label class="f-label">Cliente</label><input class="f-input" id="m-cli" autocomplete="off" oninput="clienteAutocomplete(this)" onblur="setTimeout(()=>{const s=document.getElementById('cli-suggestions');if(s)s.style.display='none'},200)" placeholder="Buscar cliente existente o escribir nuevo nombre" value="${d?d.cliente:''}"><div id="cli-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:0 0 8px 8px;z-index:200;max-height:180px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12)"></div></div>
+    <div class="f-group modal-full"><label class="f-label">Contraparte</label><input class="f-input" id="m-contra" value="${d?d.contra:''}"></div>
+    <div class="f-group"><label class="f-label">Juzgado / Autoridad</label><input class="f-input" id="m-juz" value="${d?d.juzgado:''}"></div>
+    <div class="f-group"><label class="f-label">Cuantía</label>
+    <select class="f-select" id="m-cuantia-tipo" onchange="toggleCuantia(this)" style="margin-bottom:6px">
+      <option value="indeterminada" ${d&&(d.monto==='Indeterminada'||d.cuantiaTipo==='indeterminada')?'selected':''}>Indeterminada</option>
+      <option value="mxn" ${d&&d.cuantiaTipo==='mxn'?'selected':''}>Valor en pesos (MXN)</option>
+      <option value="usd" ${d&&d.cuantiaTipo==='usd'?'selected':''}>Valor en dólares (USD)</option>
+    </select>
+    <div id="m-cuantia-wrap" style="display:${d&&(d.cuantiaTipo==='mxn'||d.cuantiaTipo==='usd')?'flex':'none'};align-items:center;gap:6px">
+      <span id="m-cuantia-symbol" style="font-size:13px;font-weight:600;color:var(--text2);flex-shrink:0">${d&&d.cuantiaTipo==='usd'?'USD':'$'}</span>
+      <input class="f-input" id="m-monto" placeholder="0.00" value="${d&&d.cuantiaTipo&&d.cuantiaTipo!=='indeterminada'?d.monto.replace(/[^0-9.]/g,''):''}">
+    </div></div>
+    <div class="f-group"><label class="f-label">Status</label><select class="f-select" id="m-status">${['Activo','En espera','Cerrado'].map(s=>`<option ${d&&d.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="f-group modal-full"><label class="f-label">Nota de estado</label><textarea class="f-textarea" id="m-nota">${d?d.nota:''}</textarea></div>
+  </div><div class="modal-footer"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-ok" onclick="saveAsunto()">Guardar</button></div>`;
+}
+
+function tplEvento(d){
+  const tipos=['Audiencia','Término procesal','Vencimiento legal','Reunión cliente','Entrega de escrito'];
+  return `<div class="modal-title">${d?'Editar evento':'Nuevo evento'}</div><div class="modal-sub">Audiencia, término o compromiso</div>
+  <div class="modal-grid">
+    <div class="f-group"><label class="f-label">Fecha</label><input type="date" class="f-input" id="m-fecha" value="${d?d.fecha:fmtISO(addDays(TODAY,7))}"></div>
+    <div class="f-group"><label class="f-label">Tipo</label><select class="f-select" id="m-tipo-e">${tipos.map(t=>`<option ${d&&d.tipo===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="f-group"><label class="f-label">Expediente</label><input class="f-input" id="m-asunto" value="${d?d.asunto:''}"></div>
+    <div class="f-group"><label class="f-label">Cliente</label><input class="f-input" id="m-cli-e" value="${d?d.cliente:''}"></div>
+    <div class="f-group"><label class="f-label">Urgencia</label><select class="f-select" id="m-urg">${['alta','media','baja'].map(u=>`<option ${d&&d.urgencia===u?'selected':''}>${u}</option>`).join('')}</select></div>
+    <div class="f-group modal-full"><label class="f-label">Descripción / instrucción</label><textarea class="f-textarea" id="m-desc">${d?d.desc:''}</textarea></div>
+  </div><div class="modal-footer"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-ok" onclick="saveEvento()">Guardar</button></div>`;
+}
+
+function tplCliente(d){
+  return `<div class="modal-title">${d?'Editar cliente':'Nuevo cliente'}</div><div class="modal-sub">Datos del cliente</div>
+  <div class="modal-grid">
+    <div class="f-group modal-full"><label class="f-label">Nombre / Razón social</label><input class="f-input" id="m-nom" value="${d?d.nombre:''}"></div>
+    <div class="f-group"><label class="f-label">Tipo</label><select class="f-select" id="m-tipo-c">${['Persona física','Persona moral','Extranjero / FDI'].map(t=>`<option ${d&&d.tipo===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="f-group"><label class="f-label">Status</label><select class="f-select" id="m-stat-c">${['Activo','En espera','Cerrado'].map(s=>`<option ${d&&d.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
+    <div class="f-group modal-full"><label class="f-label">Materias</label><input class="f-input" id="m-mats" value="${d?d.materias:''}"></div>
+    <div class="f-group modal-full"><label class="f-label">Notas</label><textarea class="f-textarea" id="m-nota-c">${d?d.nota:''}</textarea></div>
+  </div><div class="modal-footer"><button class="btn-cancel" onclick="closeModal()">Cancelar</button><button class="btn-ok" onclick="saveCliente()">Guardar</button></div>`;
+}
+
+async function saveAsunto(){
+  if(!fv('m-exp')){alert('Ingrese el número de expediente');return;}
+  const d={id:mEditId||Date.now(),exp:fv('m-exp'),tipo:fv('m-tipo'),materia:(fv('m-mat')==="Otra"&&fv('m-mat-otra'))?fv('m-mat-otra'):fv('m-mat'),etapa:fv('m-etapa'),cliente:fv('m-cli'),contra:fv('m-contra'),juzgado:fv('m-juz'),monto:(()=>{const t=fv('m-cuantia-tipo')||'indeterminada';if(t==='indeterminada')return 'Indeterminada';const v=fv('m-monto')||'0';return t==='usd'?'USD $'+parseFloat(v.replace(/,/g,'')).toLocaleString('en-US',{minimumFractionDigits:2}):'$'+parseFloat(v.replace(/,/g,'')).toLocaleString('es-MX',{minimumFractionDigits:2});})(),cuantiaTipo:fv('m-cuantia-tipo')||'indeterminada',status:fv('m-status'),nota:fv('m-nota')};
+  if(mEditId)CL21.asuntos=CL21.asuntos.map(a=>a.id===mEditId?{...a,...d}:a);else CL21.asuntos.unshift(d);
+  if(d.cliente&&d.cliente.trim()){
+    const existe=CL21.clientes.find(c=>c.nombre.toLowerCase()===d.cliente.toLowerCase());
+    if(!existe){
+      CL21.clientes.unshift({id:Date.now()+1,nombre:d.cliente.trim(),tipo:'Persona física',status:'Activo',materias:d.materia||'',nota:'Creado automáticamente desde Exp. '+d.exp+'.'});
+      console.log('Cliente auto-creado:',d.cliente);
+    }
+  }
+  await forceSave();renderExp();updateBadges();renderDashboard();closeModal();showToast(mEditId?'Expediente actualizado':'Expediente registrado');
+}
+async function saveEvento(){
+  if(!fv('m-fecha')){alert('Seleccione una fecha');return;}
+  const d={id:mEditId||Date.now(),fecha:fv('m-fecha'),tipo:fv('m-tipo-e'),asunto:fv('m-asunto'),cliente:fv('m-cli-e'),urgencia:fv('m-urg'),desc:fv('m-desc')};
+  if(mEditId)CL21.eventos=CL21.eventos.map(e=>e.id===mEditId?d:e);else CL21.eventos.unshift(d);
+  await forceSave();renderAgenda();updateBadges();renderDashboard();closeModal();showToast(mEditId?'Evento actualizado':'Evento registrado');
+}
+async function saveCliente(){
+  if(!fv('m-nom')){alert('Ingrese el nombre');return;}
+  const d={id:mEditId||Date.now(),nombre:fv('m-nom'),tipo:fv('m-tipo-c'),status:fv('m-stat-c'),materias:fv('m-mats'),nota:fv('m-nota-c')};
+  if(mEditId)CL21.clientes=CL21.clientes.map(c=>c.id===mEditId?d:c);else CL21.clientes.unshift(d);
+  await forceSave();renderClientes();closeModal();showToast(mEditId?'Cliente actualizado':'Cliente registrado');
+}
+
+function clienteAutocomplete(input){
+  const q=(input.value||"").toLowerCase().trim();
+  const sug=document.getElementById("cli-suggestions");
+  if(!sug)return;
+  if(!q||q.length<2){sug.style.display="none";return;}
+  const matches=CL21.clientes.filter(c=>c.nombre.toLowerCase().includes(q));
+  const newOpt={nombre:input.value.trim(),isNew:true};
+  const items=matches.length?matches:[newOpt];
+  const showNew=!matches.find(c=>c.nombre.toLowerCase()===q);
+  let html="";
+  matches.forEach(c=>{
+    html+=`<div style="padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px" onmousedown="selectCliente('${c.nombre.replace(/'/g,"\'")}')"><span style="width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block;flex-shrink:0"></span>${c.nombre}<span style="font-size:10px;color:var(--text3);margin-left:auto">${c.materias||""}</span></div>`;
+  });
+  if(showNew&&input.value.trim()){
+    html+=`<div style="padding:9px 14px;cursor:pointer;font-size:13px;color:var(--blue);display:flex;align-items:center;gap:8px;background:#EBF5FB08" onmousedown="selectCliente('${input.value.trim().replace(/'/g,"\'")}',true)"><span style="font-size:16px;font-weight:600;line-height:1">+</span>Crear cliente: <strong>${input.value.trim()}</strong></div>`;
+  }
+  if(html){sug.innerHTML=html;sug.style.display="block";}
+  else sug.style.display="none";
+}
+
+function selectCliente(nombre,isNew){
+  const inp=document.getElementById("m-cli");
+  if(inp)inp.value=nombre;
+  const sug=document.getElementById("cli-suggestions");
+  if(sug)sug.style.display="none";
+  if(isNew&&nombre){
+    const existe=CL21.clientes.find(c=>c.nombre.toLowerCase()===nombre.toLowerCase());
+    if(!existe){
+      CL21.clientes.unshift({id:Date.now(),nombre,tipo:"Persona física",status:"Activo",materias:"",nota:"Creado automáticamente desde expediente."});
+      showToast("Cliente creado: "+nombre);
+    }
+  }
+}
+function toggleCuantia(sel){
+  const wrap=document.getElementById('m-cuantia-wrap');
+  const sym=document.getElementById('m-cuantia-symbol');
+  if(!wrap)return;
+  if(sel.value==='indeterminada'){wrap.style.display='none';}
+  else{wrap.style.display='flex';if(sym)sym.textContent=sel.value==='usd'?'USD':'$';}
+}
+
+function toggleOtraMateria(sel){
+  const otraDiv=document.getElementById("m-mat-otra-wrap");
+  if(otraDiv) otraDiv.style.display=sel.value==="Otra"?"block":"none";
+}
+async function delAsunto(id){if(!confirm('¿Eliminar?'))return;CL21.asuntos=CL21.asuntos.filter(a=>a.id!==id);await forceSave();renderExp();updateBadges();renderDashboard();showToast('Eliminado');}
+async function delEvento(id){if(!confirm('¿Eliminar?'))return;CL21.eventos=CL21.eventos.filter(e=>e.id!==id);await forceSave();renderAgenda();updateBadges();renderDashboard();showToast('Eliminado');}
+async function delCliente(id){if(!confirm('¿Eliminar?'))return;CL21.clientes=CL21.clientes.filter(c=>c.id!==id);await forceSave();renderClientes();showToast('Eliminado');}
+
+// ══════════════════════════════════════
+// UI HELPERS
+// ══════════════════════════════════════
+let syncTimer=null;
+function showSync(msg,spinning=true,autoHide=false){
+  const el=document.getElementById('sync-indicator');
+  const icon=document.getElementById('sync-icon');
+  const txt=document.getElementById('sync-text');
+  txt.textContent=msg;
+  el.classList.add('show');
+  if(spinning)el.classList.add('syncing');else el.classList.remove('syncing');
+  if(syncTimer)clearTimeout(syncTimer);
+  if(autoHide)syncTimer=setTimeout(()=>el.classList.remove('show'),2500);
+}
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+window.onload=()=>{
+  document.querySelectorAll('.view').forEach(v=>{if(!v.classList.contains('active'))v.style.display='none';});
+  document.getElementById('config-banner').style.display='none';
+  initGoogleAPIs();
+};
+</script>
+</body>
+</html>
